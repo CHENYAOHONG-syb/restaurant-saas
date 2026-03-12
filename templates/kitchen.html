@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Kitchen Orders</title>
+<title>Kitchen</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -17,19 +17,27 @@ padding:20px;
 }
 
 .order{
+
 background:#222;
 padding:20px;
 margin-bottom:15px;
 border-radius:10px;
+
 }
 
 button{
-background:#27ae60;
-border:none;
-color:white;
+
 padding:10px;
 margin-top:10px;
+
+background:#00cc66;
+
+border:none;
+
+color:white;
+
 border-radius:5px;
+
 }
 
 </style>
@@ -42,30 +50,25 @@ border-radius:5px;
 
 <div id="orders"></div>
 
-<audio id="ding">
-<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
-</audio>
-
 <script>
 
-let lastCount = 0
+async function loadOrders(){
 
-function loadOrders(){
+const res = await fetch("/api/orders/1")
 
-fetch("/api/orders/1")
-.then(res=>res.json())
-.then(data=>{
+const data = await res.json()
 
-let html = ""
+const container = document.getElementById("orders")
 
-data.orders.forEach(order=>{
+container.innerHTML=""
 
-html += `
+data.orders.forEach(order => {
+
+container.innerHTML += `
+
 <div class="order">
 
-<h3>Order #${order.id}</h3>
-
-<p>Table ${order.table}</p>
+<h3>Table ${order.table}</h3>
 
 <p>${order.name}</p>
 
@@ -76,27 +79,16 @@ html += `
 </form>
 
 </div>
+
 `
 
 })
 
-document.getElementById("orders").innerHTML = html
-
-if(data.orders.length > lastCount){
-
-document.getElementById("ding").play()
-
 }
-
-lastCount = data.orders.length
-
-})
-
-}
-
-loadOrders()
 
 setInterval(loadOrders,2000)
+
+loadOrders()
 
 </script>
 
