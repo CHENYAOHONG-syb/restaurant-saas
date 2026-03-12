@@ -2,7 +2,38 @@
 <html>
 
 <head>
-<title>Kitchen Screen</title>
+
+<title>Kitchen Orders</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+font-family:Arial;
+background:#111;
+color:white;
+padding:20px;
+}
+
+.order{
+background:#222;
+padding:20px;
+margin-bottom:15px;
+border-radius:10px;
+}
+
+button{
+background:#27ae60;
+border:none;
+color:white;
+padding:10px;
+margin-top:10px;
+border-radius:5px;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -11,20 +42,26 @@
 
 <div id="orders"></div>
 
+<audio id="ding">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+</audio>
+
 <script>
+
+let lastCount = 0
 
 function loadOrders(){
 
 fetch("/api/orders/1")
-.then(response => response.json())
-.then(data => {
+.then(res=>res.json())
+.then(data=>{
 
 let html = ""
 
-data.orders.forEach(order => {
+data.orders.forEach(order=>{
 
 html += `
-<div style="border:1px solid black;margin:10px;padding:10px">
+<div class="order">
 
 <h3>Order #${order.id}</h3>
 
@@ -33,7 +70,9 @@ html += `
 <p>${order.name}</p>
 
 <form action="/done/${order.id}" method="POST">
+
 <button>DONE</button>
+
 </form>
 
 </div>
@@ -42,6 +81,14 @@ html += `
 })
 
 document.getElementById("orders").innerHTML = html
+
+if(data.orders.length > lastCount){
+
+document.getElementById("ding").play()
+
+}
+
+lastCount = data.orders.length
 
 })
 
