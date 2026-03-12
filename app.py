@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
 
@@ -9,6 +9,7 @@ def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
+
 
 # HOME PAGE
 @app.route("/")
@@ -24,6 +25,7 @@ def home():
         "restaurants.html",
         restaurants=restaurants
     )
+
 
 # MENU PAGE
 @app.route("/restaurant/<int:restaurant_id>")
@@ -134,7 +136,7 @@ def kitchen(restaurant_id):
     )
 
 
-# API FOR KITCHEN AUTO REFRESH
+# API ORDERS
 @app.route("/api/orders/<int:restaurant_id>")
 def api_orders(restaurant_id):
 
@@ -160,7 +162,7 @@ def api_orders(restaurant_id):
     return {"orders":result}
 
 
-# MARK ORDER DONE
+# DONE ORDER
 @app.route("/done/<int:order_id>", methods=["POST"])
 def done(order_id):
 
@@ -181,19 +183,18 @@ def done(order_id):
 def dashboard_redirect():
     return redirect("/dashboard/1")
 
-# DASHBOARD PAGE
+
+# DASHBOARD
 @app.route("/dashboard/<int:restaurant_id>")
 def dashboard(restaurant_id):
 
     db = get_db()
 
-    # Total orders
     total_orders = db.execute(
         "SELECT COUNT(*) as count FROM orders WHERE restaurant_id=?",
         (restaurant_id,)
     ).fetchone()["count"]
 
-    # Total sales
     total_sales = db.execute("""
         SELECT SUM(menu.price) as total
         FROM orders
@@ -204,7 +205,6 @@ def dashboard(restaurant_id):
     if total_sales is None:
         total_sales = 0
 
-    # Top food
     top_food = db.execute("""
         SELECT menu.name, COUNT(*) as total
         FROM orders
@@ -222,7 +222,8 @@ def dashboard(restaurant_id):
         top_food=top_food
     )
 
-# ADMIN PANEL
+
+# ADMIN PAGE
 @app.route("/admin/<int:restaurant_id>")
 def admin(restaurant_id):
 
@@ -240,7 +241,7 @@ def admin(restaurant_id):
     )
 
 
-# ADD MENU ITEM
+# ADD FOOD
 @app.route("/add_food", methods=["POST"])
 def add_food():
 
@@ -258,28 +259,6 @@ def add_food():
     db.commit()
 
     return redirect(f"/admin/{restaurant_id}")
-
-
-# LOGIN
-@app.route("/login", methods=["GET","POST"])
-def login():
-
-    if request.method=="POST":
-
-        username=request.form["username"]
-        password=request.form["password"]
-
-        db=get_db()
-
-        user=db.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username,password)
-        ).fetchone()
-
-        if user:
-            return redirect("/admin/1")
-
-    return render_template("login.html")
 
 
 if __name__ == "__main__":
