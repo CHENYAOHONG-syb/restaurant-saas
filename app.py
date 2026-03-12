@@ -1,12 +1,18 @@
-from flask import Flask, render_template, request, redirect, jsonify, g
+from flask import Flask, render_template, request, redirect, jsonify, g, session
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import os
+import stripe
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
 DATABASE = "database.db"
 
+stripe.api_key = "YOUR_STRIPE_SECRET_KEY"
 
+
+# DATABASE
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -19,6 +25,65 @@ def close_db(exception):
     db = g.pop("db", None)
     if db is not None:
         db.close()
+
+
+# REGISTER
+@app.route("/register", methods=["GET","POST"])
+def register():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        hashed = generate_password_hash(password)
+
+        db = get_db()
+
+        db.execute(
+            "INSERT INTO users (username,password) VALUES (?,?)",
+            (username, hashed)
+        )
+
+        db.commit()
+
+        return redirect("/login")
+
+    return render_template("register.html")
+
+
+# LOGIN
+@app.route("/login", methods=["GET","POST"])
+def login():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        password = request.form["password"]
+
+        db = get_db()
+
+        user = db.execute(
+            "SELECT * FROM users WHERE username=?",
+            (username,)
+        ).fetchone()
+
+        if user and check_password_hash(user["password"], password):
+
+            session["user_id"] = user["id"]
+
+            return redirect("/dashboard/1")
+
+    return render_template("login.html")
+
+
+# LOGOUT
+@app.route("/logout")
+def logout():
+
+    session.clear()
+
+    return redirect("/login")
 
 
 # HOME
@@ -41,7 +106,7 @@ def home():
 @app.route("/restaurant/<int:restaurant_id>")
 def menu(restaurant_id):
 
-    table = request.args.get("table","1")
+    table = request.args.get("table", "1")
 
     db = get_db()
 
@@ -69,8 +134,8 @@ def add_to_cart():
     db = get_db()
 
     db.execute(
-        "INSERT INTO cart (food_id,table_number) VALUES (?,?)",
-        (food_id,table)
+        "INSERT INTO cart (food_id, table_number) VALUES (?,?)",
+        (food_id, table)
     )
 
     db.commit()
@@ -78,7 +143,7 @@ def add_to_cart():
     return redirect(f"/cart?table={table}&restaurant_id={restaurant_id}")
 
 
-# CART PAGE
+# CART
 @app.route("/cart")
 def cart():
 
@@ -105,37 +170,6 @@ def cart():
     )
 
 
-# CHECKOUT
-@app.route("/checkout", methods=["POST"])
-def checkout():
-
-    table = request.form["table"]
-    restaurant_id = request.form["restaurant_id"]
-
-    db = get_db()
-
-    items = db.execute(
-        "SELECT * FROM cart WHERE table_number=?",
-        (table,)
-    ).fetchall()
-
-    for item in items:
-
-        db.execute(
-            "INSERT INTO orders (restaurant_id,food_id,table_number,status,created_at) VALUES (?,?,?,?,datetime('now'))",
-            (restaurant_id,item["food_id"],table,"pending")
-        )
-
-    db.execute(
-        "DELETE FROM cart WHERE table_number=?",
-        (table,)
-    )
-
-    db.commit()
-
-    return redirect(f"/restaurant/{restaurant_id}?table={table}")
-
-
 # KITCHEN
 @app.route("/kitchen/<int:restaurant_id>")
 def kitchen(restaurant_id):
@@ -146,41 +180,44 @@ def kitchen(restaurant_id):
     )
 
 
-# API ORDERS GROUPED
+# API ORDERS
 @app.route("/api/orders/<int:restaurant_id>")
 def api_orders(restaurant_id):
 
     db = get_db()
 
     rows = db.execute("""
-        SELECT orders.id, menu.name, orders.table_number, orders.created_at
+        SELECT
+        orders.id as order_id,
+        orders.table_number,
+        menu.name,
+        order_items.qty
         FROM orders
-        JOIN menu ON orders.food_id = menu.id
-        WHERE orders.restaurant_id=? AND orders.status='pending'
-        ORDER BY orders.created_at
+        JOIN order_items ON orders.id = order_items.order_id
+        JOIN menu ON order_items.food_id = menu.id
+        WHERE orders.restaurant_id=? 
+        AND orders.status='pending'
     """,(restaurant_id,)).fetchall()
 
     grouped = {}
 
     for row in rows:
 
-        table = row["table_number"]
+        order_id = row["order_id"]
 
-        if table not in grouped:
-            grouped[table] = {
-                "table": table,
-                "items": [],
-                "time": row["created_at"]
+        if order_id not in grouped:
+            grouped[order_id] = {
+                "order_id": order_id,
+                "table": row["table_number"],
+                "items": []
             }
 
-        grouped[table]["items"].append({
-            "id": row["id"],
-            "name": row["name"]
+        grouped[order_id]["items"].append({
+            "name": row["name"],
+            "qty": row["qty"]
         })
 
-    result = list(grouped.values())
-
-    return jsonify({"orders": result})
+    return jsonify({"orders": list(grouped.values())})
 
 
 # DONE ORDER
@@ -203,6 +240,9 @@ def done(order_id):
 @app.route("/dashboard/<int:restaurant_id>")
 def dashboard(restaurant_id):
 
+    if "user_id" not in session:
+        return redirect("/login")
+
     db = get_db()
 
     total_orders = db.execute(
@@ -213,7 +253,8 @@ def dashboard(restaurant_id):
     total_sales = db.execute("""
         SELECT SUM(menu.price) as total
         FROM orders
-        JOIN menu ON orders.food_id = menu.id
+        JOIN order_items ON orders.id = order_items.order_id
+        JOIN menu ON order_items.food_id = menu.id
         WHERE orders.restaurant_id=? AND orders.status='done'
     """,(restaurant_id,)).fetchone()["total"]
 
@@ -224,6 +265,24 @@ def dashboard(restaurant_id):
         "dashboard.html",
         total_orders=total_orders,
         total_sales=total_sales
+    )
+
+
+# POS
+@app.route("/pos/<int:restaurant_id>")
+def pos(restaurant_id):
+
+    db = get_db()
+
+    foods = db.execute(
+        "SELECT * FROM menu WHERE restaurant_id=?",
+        (restaurant_id,)
+    ).fetchall()
+
+    return render_template(
+        "pos.html",
+        foods=foods,
+        restaurant_id=restaurant_id
     )
 
 
