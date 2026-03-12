@@ -1,0 +1,19 @@
+<h1>Your Cart</h1>
+
+{% for item in cart %}
+
+<p>{{item.name}} - RM{{item.price}}</p>
+
+{% endfor %}
+
+<hr>
+
+<h3>Total: RM {{total}}</h3>
+
+<form action="/checkout" method="POST">
+
+<input type="hidden" name="table" value="{{table}}">
+
+<button>Checkout</button>
+
+</form>

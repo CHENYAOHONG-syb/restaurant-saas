@@ -3,7 +3,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import os
 
-base_url = "http://192.168.1.19:5001"
+base_url = "https://web-production-202a.up.railway.app"
 
 os.makedirs("qr_tables", exist_ok=True)
 

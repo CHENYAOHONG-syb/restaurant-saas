@@ -28,7 +28,14 @@ table_number INTEGER,
 status TEXT
 )
 """)
-
+# 购物车表
+c.execute("""
+CREATE TABLE IF NOT EXISTS cart (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+food_id INTEGER,
+table_number INTEGER
+)
+""")
 c.execute("INSERT INTO restaurants VALUES (1,'Demo Restaurant')")
 
 c.execute("INSERT INTO menu VALUES (1,1,'Fried Rice',8)")

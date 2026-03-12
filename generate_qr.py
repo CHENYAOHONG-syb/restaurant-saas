@@ -1,8 +1,7 @@
 import qrcode
 import os
 
-base_url = "https://你的域名.up.railway.app"
-
+base_url = "https://web-production-202a.up.railway.app"
 os.makedirs("qr_tables", exist_ok=True)
 
 for table in range(1, 21):

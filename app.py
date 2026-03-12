@@ -157,6 +157,28 @@ def add_food():
 
     return redirect(f"/admin/{restaurant_id}")
 
+@app.route("/cart")
+def cart():
+
+    table = request.args.get("table")
+
+    db = get_db()
+
+    cart = db.execute("""
+        SELECT cart.id, menu.name, menu.price
+        FROM cart
+        JOIN menu ON cart.food_id = menu.id
+        WHERE cart.table_number=?
+    """,(table,)).fetchall()
+
+    total = sum(item["price"] for item in cart)
+
+    return render_template(
+        "cart.html",
+        cart=cart,
+        total=total,
+        table=table
+    )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
