@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<h1>Restaurant Dashboard</h1>
+
+<p>Total Orders: {{total_orders}}</p>
+
+<p>Total Sales: RM {{total_sales}}</p>
+
+<canvas id="salesChart"></canvas>
+
+<script>
+
+const ctx = document.getElementById('salesChart');
+
+new Chart(ctx, {
+
+type: 'bar',
+
+data: {
+
+labels: ['Sales'],
+
+datasets: [{
+
+label: 'Total Sales',
+
+data: [{{total_sales or 0}}],
+
+borderWidth: 1
+
+}]
+
+},
+
+});
+
+</script>
+
+</body>
+
+</html>
