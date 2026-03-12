@@ -1,7 +1,7 @@
 import qrcode
 import os
 
-base_url = "http://192.168.1.19:5001"
+base_url = "https://你的域名.up.railway.app"
 
 os.makedirs("qr_tables", exist_ok=True)
 
