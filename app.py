@@ -180,6 +180,51 @@ def cart():
         table=table
     )
 
+@app.route("/add_to_cart", methods=["POST"])
+def add_to_cart():
+
+    food_id = request.form["food_id"]
+    table = request.form["table"]
+
+    db = get_db()
+
+    db.execute(
+        "INSERT INTO cart (food_id, table_number) VALUES (?,?)",
+        (food_id, table)
+    )
+
+    db.commit()
+
+    return redirect(f"/cart?table={table}")
+
+@app.route("/checkout", methods=["POST"])
+def checkout():
+
+    table = request.form["table"]
+
+    db = get_db()
+
+    items = db.execute(
+        "SELECT * FROM cart WHERE table_number=?",
+        (table,)
+    ).fetchall()
+
+    for item in items:
+
+        db.execute(
+            "INSERT INTO orders (food_id, table_number, status) VALUES (?, ?, 'pending')",
+            (item["food_id"], table)
+        )
+
+    db.execute(
+        "DELETE FROM cart WHERE table_number=?",
+        (table,)
+    )
+
+    db.commit()
+
+    return "Order Sent to Kitchen!"
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
