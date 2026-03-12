@@ -173,11 +173,13 @@ def dashboard(restaurant_id):
 
     db = get_db()
 
+    # Total orders
     total_orders = db.execute(
         "SELECT COUNT(*) as count FROM orders WHERE restaurant_id=?",
         (restaurant_id,)
     ).fetchone()["count"]
 
+    # Total sales
     total_sales = db.execute("""
         SELECT SUM(menu.price) as total
         FROM orders
@@ -185,12 +187,26 @@ def dashboard(restaurant_id):
         WHERE orders.restaurant_id=? AND orders.status='done'
     """,(restaurant_id,)).fetchone()["total"]
 
+    if total_sales is None:
+        total_sales = 0
+
+    # Top food
+    top_food = db.execute("""
+        SELECT menu.name, COUNT(*) as total
+        FROM orders
+        JOIN menu ON orders.food_id = menu.id
+        WHERE orders.restaurant_id=?
+        GROUP BY menu.name
+        ORDER BY total DESC
+        LIMIT 1
+    """,(restaurant_id,)).fetchone()
+
     return render_template(
         "dashboard.html",
         total_orders=total_orders,
-        total_sales=total_sales
+        total_sales=total_sales,
+        top_food=top_food
     )
-
 
 # ADMIN PANEL
 @app.route("/admin/<int:restaurant_id>")
