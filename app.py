@@ -10,6 +10,20 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+# HOME PAGE
+@app.route("/")
+def home():
+
+    db = get_db()
+
+    restaurants = db.execute(
+        "SELECT * FROM restaurants"
+    ).fetchall()
+
+    return render_template(
+        "restaurants.html",
+        restaurants=restaurants
+    )
 
 # MENU PAGE
 @app.route("/restaurant/<int:restaurant_id>")

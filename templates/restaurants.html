@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Restaurant SaaS</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:30px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+a{
+text-decoration:none;
+font-size:18px;
+color:black;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Restaurant SaaS</h1>
+
+{% for r in restaurants %}
+
+<div class="card">
+
+<a href="/restaurant/{{r.id}}?table=1">
+
+{{r.name}}
+
+</a>
+
+</div>
+
+{% endfor %}
+
+</body>
+
+</html>
