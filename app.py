@@ -1,6 +1,4 @@
-from flask import Flask,
-render_templates, request,
-redirect
+from flask import Flask,render_templates, request,redirect
 import sqlite3 
 import os
 
