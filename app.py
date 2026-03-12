@@ -67,6 +67,20 @@ def add_to_cart():
 
     return redirect(f"/cart?table={table}&restaurant_id={restaurant_id}")
 
+# DELETE FOOD
+@app.route("/delete_food/<int:food_id>/<int:restaurant_id>", methods=["POST"])
+def delete_food(food_id, restaurant_id):
+
+    db = get_db()
+
+    db.execute(
+        "DELETE FROM menu WHERE id=?",
+        (food_id,)
+    )
+
+    db.commit()
+
+    return redirect(f"/admin/{restaurant_id}")
 
 # CART PAGE
 @app.route("/cart")

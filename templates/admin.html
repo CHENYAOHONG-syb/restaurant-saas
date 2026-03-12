@@ -1,29 +1,21 @@
-<h1>Restaurant Admin</h1>
-
-<h2>Add Menu Item</h2>
-
-<form action="/add_food" method="POST">
-
-<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
-
-<input name="name" placeholder="Food name">
-
-<input name="price" placeholder="Price">
-
-<button>Add</button>
-
-</form>
-
-<hr>
-
 <h2>Menu</h2>
 
 {% for food in foods %}
 
-<div>
+<div style="margin-bottom:15px">
 
-{{food.name}} - RM{{food.price}}
+<strong>{{food.name}}</strong>  
+RM {{food.price}}
+
+<form action="/delete_food/{{food.id}}/{{restaurant_id}}" method="POST" style="display:inline">
+
+<button style="background:red;color:white;border:none;padding:5px 10px">
+Delete
+</button>
+
+</form>
 
 </div>
 
 {% endfor %}
+
