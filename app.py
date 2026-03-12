@@ -162,7 +162,12 @@ def done(order_id):
     return redirect(request.referrer)
 
 
-# DASHBOARD
+# DASHBOARD REDIRECT
+@app.route("/dashboard")
+def dashboard_redirect():
+    return redirect("/dashboard/1")
+
+# DASHBOARD PAGE
 @app.route("/dashboard/<int:restaurant_id>")
 def dashboard(restaurant_id):
 
