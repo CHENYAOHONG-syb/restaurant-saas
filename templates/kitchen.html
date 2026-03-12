@@ -3,7 +3,7 @@
 
 <head>
 
-<title>Kitchen</title>
+<title>Kitchen Display</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -13,31 +13,53 @@ body{
 font-family:Arial;
 background:#111;
 color:white;
+margin:0;
 padding:20px;
+}
+
+h1{
+text-align:center;
+font-size:40px;
+margin-bottom:30px;
+}
+
+#orders{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+gap:20px;
 }
 
 .order{
-
 background:#222;
-padding:20px;
-margin-bottom:15px;
+padding:25px;
 border-radius:10px;
+border-left:8px solid #00cc66;
+}
 
+.table{
+font-size:30px;
+font-weight:bold;
+}
+
+.timer{
+color:orange;
+margin-bottom:10px;
+}
+
+.food{
+font-size:22px;
+margin-bottom:4px;
 }
 
 button{
-
-padding:10px;
-margin-top:10px;
-
+padding:12px;
+font-size:18px;
 background:#00cc66;
-
 border:none;
-
 color:white;
-
 border-radius:5px;
-
+width:100%;
+margin-top:10px;
 }
 
 </style>
@@ -52,10 +74,13 @@ border-radius:5px;
 
 <script>
 
+const restaurant_id = {{restaurant_id}}
+
+let lastOrderCount = 0
+
 async function loadOrders(){
 
-const res = await fetch("/api/orders/1")
-
+const res = await fetch(`/api/orders/${restaurant_id}`)
 const data = await res.json()
 
 const container = document.getElementById("orders")
@@ -64,15 +89,29 @@ container.innerHTML=""
 
 data.orders.forEach(order => {
 
-container.innerHTML += `
+let foods=""
+
+order.items.forEach(item => {
+
+foods+=`<div class="food">• ${item.name}</div>`
+
+})
+
+container.innerHTML+=`
 
 <div class="order">
 
-<h3>Table ${order.table}</h3>
+<div class="table">
+Table ${order.table}
+</div>
 
-<p>${order.name}</p>
+<div class="timer">
+Time: ${order.time}
+</div>
 
-<form action="/done/${order.id}" method="POST">
+${foods}
+
+<form action="/done/${order.items[0].id}" method="POST">
 
 <button>DONE</button>
 
@@ -84,14 +123,30 @@ container.innerHTML += `
 
 })
 
+if(data.orders.length > lastOrderCount){
+
+alert("🔔 New Order!")
+
+const audio = new Audio("/static/alert.mp3")
+audio.play()
+
+}
+
+lastOrderCount=data.orders.length
+
 }
 
 setInterval(loadOrders,2000)
 
 loadOrders()
 
+document.body.onclick=()=>{
+document.documentElement.requestFullscreen()
+}
+
 </script>
 
 </body>
 
 </html>
+

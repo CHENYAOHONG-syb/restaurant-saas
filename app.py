@@ -1,17 +1,27 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify, g
 import sqlite3
 import os
 
 app = Flask(__name__)
 
+DATABASE = "database.db"
+
 
 def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
 
-# HOME PAGE
+@app.teardown_appcontext
+def close_db(exception):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+# HOME
 @app.route("/")
 def home():
 
@@ -27,11 +37,11 @@ def home():
     )
 
 
-# MENU PAGE
+# MENU
 @app.route("/restaurant/<int:restaurant_id>")
 def menu(restaurant_id):
 
-    table = request.args.get("table", "1")
+    table = request.args.get("table","1")
 
     db = get_db()
 
@@ -59,28 +69,14 @@ def add_to_cart():
     db = get_db()
 
     db.execute(
-        "INSERT INTO cart (food_id, table_number) VALUES (?,?)",
-        (food_id, table)
+        "INSERT INTO cart (food_id,table_number) VALUES (?,?)",
+        (food_id,table)
     )
 
     db.commit()
 
     return redirect(f"/cart?table={table}&restaurant_id={restaurant_id}")
 
-# DELETE FOOD
-@app.route("/delete_food/<int:food_id>/<int:restaurant_id>", methods=["POST"])
-def delete_food(food_id, restaurant_id):
-
-    db = get_db()
-
-    db.execute(
-        "DELETE FROM menu WHERE id=?",
-        (food_id,)
-    )
-
-    db.commit()
-
-    return redirect(f"/admin/{restaurant_id}")
 
 # CART PAGE
 @app.route("/cart")
@@ -126,7 +122,7 @@ def checkout():
     for item in items:
 
         db.execute(
-            "INSERT INTO orders (restaurant_id,food_id,table_number,status) VALUES (?,?,?,?)",
+            "INSERT INTO orders (restaurant_id,food_id,table_number,status,created_at) VALUES (?,?,?,?,datetime('now'))",
             (restaurant_id,item["food_id"],table,"pending")
         )
 
@@ -140,7 +136,7 @@ def checkout():
     return redirect(f"/restaurant/{restaurant_id}?table={table}")
 
 
-# KITCHEN SCREEN
+# KITCHEN
 @app.route("/kitchen/<int:restaurant_id>")
 def kitchen(restaurant_id):
 
@@ -150,30 +146,41 @@ def kitchen(restaurant_id):
     )
 
 
-# API ORDERS
+# API ORDERS GROUPED
 @app.route("/api/orders/<int:restaurant_id>")
 def api_orders(restaurant_id):
 
     db = get_db()
 
-    orders = db.execute("""
-        SELECT orders.id, menu.name, orders.table_number
+    rows = db.execute("""
+        SELECT orders.id, menu.name, orders.table_number, orders.created_at
         FROM orders
         JOIN menu ON orders.food_id = menu.id
         WHERE orders.restaurant_id=? AND orders.status='pending'
+        ORDER BY orders.created_at
     """,(restaurant_id,)).fetchall()
 
-    result=[]
+    grouped = {}
 
-    for order in orders:
+    for row in rows:
 
-        result.append({
-            "id":order["id"],
-            "name":order["name"],
-            "table":order["table_number"]
+        table = row["table_number"]
+
+        if table not in grouped:
+            grouped[table] = {
+                "table": table,
+                "items": [],
+                "time": row["created_at"]
+            }
+
+        grouped[table]["items"].append({
+            "id": row["id"],
+            "name": row["name"]
         })
 
-    return {"orders":result}
+    result = list(grouped.values())
+
+    return jsonify({"orders": result})
 
 
 # DONE ORDER
@@ -190,12 +197,6 @@ def done(order_id):
     db.commit()
 
     return redirect(request.referrer)
-
-
-# DASHBOARD REDIRECT
-@app.route("/dashboard")
-def dashboard_redirect():
-    return redirect("/dashboard/1")
 
 
 # DASHBOARD
@@ -219,62 +220,13 @@ def dashboard(restaurant_id):
     if total_sales is None:
         total_sales = 0
 
-    top_food = db.execute("""
-        SELECT menu.name, COUNT(*) as total
-        FROM orders
-        JOIN menu ON orders.food_id = menu.id
-        WHERE orders.restaurant_id=?
-        GROUP BY menu.name
-        ORDER BY total DESC
-        LIMIT 1
-    """,(restaurant_id,)).fetchone()
-
     return render_template(
         "dashboard.html",
         total_orders=total_orders,
-        total_sales=total_sales,
-        top_food=top_food
+        total_sales=total_sales
     )
-
-
-# ADMIN PAGE
-@app.route("/admin/<int:restaurant_id>")
-def admin(restaurant_id):
-
-    db = get_db()
-
-    foods = db.execute(
-        "SELECT * FROM menu WHERE restaurant_id=?",
-        (restaurant_id,)
-    ).fetchall()
-
-    return render_template(
-        "admin.html",
-        foods=foods,
-        restaurant_id=restaurant_id
-    )
-
-
-# ADD FOOD
-@app.route("/add_food", methods=["POST"])
-def add_food():
-
-    name = request.form["name"]
-    price = request.form["price"]
-    restaurant_id = request.form["restaurant_id"]
-
-    db = get_db()
-
-    db.execute(
-        "INSERT INTO menu (restaurant_id,name,price) VALUES (?,?,?)",
-        (restaurant_id,name,price)
-    )
-
-    db.commit()
-
-    return redirect(f"/admin/{restaurant_id}")
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT",5000))
+    app.run(host="0.0.0.0",port=port)
