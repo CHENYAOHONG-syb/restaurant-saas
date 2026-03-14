@@ -1,66 +1,19 @@
+from flask import Blueprint, request, redirect
 from models.order import Order
 from models.order_item import OrderItem
+from models.cart import Cart
 from extensions import db
 
 orders = Blueprint("orders", __name__)
 
-@orders.route("/checkout", methods=["POST"])
-def checkout():
-
-    table = request.form["table"]
-    restaurant_id = request.form["restaurant_id"]
-
-    db = get_db()
-
-    cursor = db.execute(
-        """
-        INSERT INTO orders
-        (restaurant_id,table_number,status)
-        VALUES (?,?,?)
-        """,
-        (restaurant_id,table,"pending")
-    )
-
-    order_id = cursor.lastrowid
-
-    items = db.execute(
-        """
-        SELECT food_id,qty
-        FROM cart
-        WHERE table_number=? AND restaurant_id=?
-        """,
-        (table,restaurant_id)
-    ).fetchall()
-
-    for item in items:
-
-        db.execute(
-            """
-            INSERT INTO order_items
-            (order_id,food_id,qty)
-            VALUES (?,?,?)
-            """,
-            (order_id,item["food_id"],item["qty"])
-        )
-
-    db.execute(
-        """
-        DELETE FROM cart
-        WHERE table_number=? AND restaurant_id=?
-        """,
-        (table,restaurant_id)
-    )
-
-    db.commit()
-
-    return redirect(f"/orders/receipt/{order_id}")
 
 @orders.route("/checkout", methods=["POST"])
 def checkout():
 
-    table = request.form["table"]
-    restaurant_id = request.form["restaurant_id"]
+    table = request.form.get("table")
+    restaurant_id = request.form.get("restaurant_id")
 
+    # 创建订单
     order = Order(
         restaurant_id=restaurant_id,
         table_number=table,
@@ -70,8 +23,29 @@ def checkout():
     db.session.add(order)
     db.session.commit()
 
-    return redirect(f"/orders/receipt/{order.id}")
+    # 获取购物车
+    items = Cart.query.filter_by(
+        table_number=table,
+        restaurant_id=restaurant_id
+    ).all()
 
-orders_list = Order.query.filter_by(
-    restaurant_id=restaurant_id
-).all()
+    # 写入 order_items
+    for item in items:
+
+        order_item = OrderItem(
+            order_id=order.id,
+            food_id=item.food_id,
+            qty=item.qty
+        )
+
+        db.session.add(order_item)
+
+    # 清空购物车
+    Cart.query.filter_by(
+        table_number=table,
+        restaurant_id=restaurant_id
+    ).delete()
+
+    db.session.commit()
+
+    return redirect(f"/orders/receipt/{order.id}")

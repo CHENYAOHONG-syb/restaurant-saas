@@ -1,9 +1,9 @@
 from extensions import db
 
 
-class Order(db.Model):
+class Cart(db.Model):
 
-    __tablename__ = "orders"
+    __tablename__ = "cart"
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -18,12 +18,14 @@ class Order(db.Model):
         nullable=False
     )
 
-    status = db.Column(
-        db.String(50),
-        default="pending"
+    food_id = db.Column(
+        db.Integer,
+        db.ForeignKey("menu.id"),
+        nullable=False
     )
 
-    created_at = db.Column(
-        db.DateTime,
-        server_default=db.func.now()
+    qty = db.Column(
+        db.Integer,
+        default=1,
+        nullable=False
     )

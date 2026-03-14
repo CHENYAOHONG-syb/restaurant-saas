@@ -1,5 +1,6 @@
 from extensions import db
 
+
 class OrderItem(db.Model):
 
     __tablename__ = "order_items"
@@ -8,12 +9,18 @@ class OrderItem(db.Model):
 
     order_id = db.Column(
         db.Integer,
-        db.ForeignKey("orders.id")
+        db.ForeignKey("orders.id"),
+        nullable=False
     )
 
     food_id = db.Column(
         db.Integer,
-        db.ForeignKey("menu.id")
+        db.ForeignKey("menu.id"),
+        nullable=False
     )
 
-    qty = db.Column(db.Integer)
+    qty = db.Column(
+        db.Integer,
+        nullable=False,
+        default=1
+    )

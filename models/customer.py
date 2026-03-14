@@ -1,5 +1,6 @@
 from extensions import db
 
+
 class Customer(db.Model):
 
     __tablename__ = "customers"
@@ -8,12 +9,16 @@ class Customer(db.Model):
 
     restaurant_id = db.Column(
         db.Integer,
-        db.ForeignKey("restaurants.id")
+        db.ForeignKey("restaurants.id"),
+        nullable=False
     )
 
     name = db.Column(db.String(120))
 
-    phone = db.Column(db.String(50))
+    phone = db.Column(
+        db.String(50),
+        index=True
+    )
 
     created_at = db.Column(
         db.DateTime,

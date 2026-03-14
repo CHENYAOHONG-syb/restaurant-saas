@@ -17,13 +17,14 @@ def show_menu(restaurant_id):
         foods=foods,
         restaurant_id=restaurant_id
     )
-    
+
+
 @menu.route("/add_food", methods=["POST"])
 def add_food():
 
-    name = request.form["name"]
-    price = request.form["price"]
-    restaurant_id = request.form["restaurant_id"]
+    name = request.form.get("name")
+    price = request.form.get("price")
+    restaurant_id = request.form.get("restaurant_id")
 
     food = Menu(
         name=name,
