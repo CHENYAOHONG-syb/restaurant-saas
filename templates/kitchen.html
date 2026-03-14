@@ -111,7 +111,7 @@
 
   async function loadOrders(){
     try {
-      const res = await fetch(`/orders/api/orders/${restaurant_id}`, {cache:"no-store"});
+      const res = await fetch(`/orders/api/orders/${restaurant_id}`);
       if(!res.ok) throw new Error("Failed loading orders");
       const data = await res.json();
 

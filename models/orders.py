@@ -204,3 +204,18 @@ def add_to_cart():
     db.commit()
 
     return redirect(request.referrer)
+
+@orders.route("/order/<int:order_id>")
+def order_status(order_id):
+
+    db = get_db()
+
+    order = db.execute(
+        "SELECT * FROM orders WHERE id=?",
+        (order_id,)
+    ).fetchone()
+
+    return render_template(
+        "order_status.html",
+        order=order
+    )

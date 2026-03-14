@@ -2,13 +2,6 @@
 <html>
 
 <head>
-<div style="text-align:center">
-
-<img src="/{{restaurant.logo}}" width="120">
-
-<h2>{{restaurant.name}}</h2>
-
-</div>
 
 <head>
 
@@ -19,7 +12,12 @@ background:{{restaurant.theme_color}};
 }
 
 </style>
+<div style="text-align:center">
+<img src="/{{restaurant.logo}}" width="120">
 
+<h2>{{restaurant.name}}</h2>
+
+</div>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Menu</title>
@@ -140,7 +138,7 @@ RM {{food.price}}
 
 </div>
 
-<form action="/add_to_cart" method="POST">
+<form action="/orders/add_to_cart" method="POST">
 
 <input type="hidden" name="food_id" value="{{food.id}}">
 <input type="hidden" name="table" value="{{table}}">

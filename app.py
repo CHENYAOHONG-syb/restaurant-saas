@@ -24,7 +24,7 @@ app.register_blueprint(platform)
 app.register_blueprint(menu, url_prefix="/menu")
 app.register_blueprint(inventory, url_prefix="/inventory")
 
-app.register_blueprint(orders, url_prefix="/orders")
+app.register_blueprint(orders)
 
 app.register_blueprint(admin, url_prefix="/admin")
 app.register_blueprint(dashboard)

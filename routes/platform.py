@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, request, redirect
 from services.db import get_db
+import qrcode
+from flask import send_file
+import io
 
 platform = Blueprint("platform", __name__)
 
@@ -57,3 +60,16 @@ def subscribe(plan):
 @platform.route("/")
 def landing():
     return render_template("index.html")
+
+@platform.route("/qr/<slug>/<int:table>")
+def generate_qr(slug, table):
+
+    url = f"https://yourdomain.up.railway.app/r/{slug}?table={table}"
+
+    img = qrcode.make(url)
+
+    buf = io.BytesIO()
+    img.save(buf)
+    buf.seek(0)
+
+    return send_file(buf, mimetype="image/png")
