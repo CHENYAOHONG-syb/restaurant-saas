@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect
-from services.db import get_db
+from models.menu import Menu
+from extensions import db
 
 menu = Blueprint("menu", __name__)
 
@@ -7,15 +8,30 @@ menu = Blueprint("menu", __name__)
 @menu.route("/menu/<int:restaurant_id>")
 def show_menu(restaurant_id):
 
-    db = get_db()
-
-    foods = db.execute(
-        "SELECT * FROM menu WHERE restaurant_id=?",
-        (restaurant_id,)
-    ).fetchall()
+    foods = Menu.query.filter_by(
+        restaurant_id=restaurant_id
+    ).all()
 
     return render_template(
         "menu.html",
         foods=foods,
         restaurant_id=restaurant_id
     )
+    
+@menu.route("/add_food", methods=["POST"])
+def add_food():
+
+    name = request.form["name"]
+    price = request.form["price"]
+    restaurant_id = request.form["restaurant_id"]
+
+    food = Menu(
+        name=name,
+        price=price,
+        restaurant_id=restaurant_id
+    )
+
+    db.session.add(food)
+    db.session.commit()
+
+    return redirect(request.referrer)

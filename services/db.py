@@ -4,13 +4,11 @@ from flask import g
 DATABASE = "database.db"
 
 def get_db():
+    
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
 
-    if "db" not in g:
-
-        g.db = sqlite3.connect(DATABASE)
-        g.db.row_factory = sqlite3.Row
-
-    return g.db
+    return conn
 
 
 def close_db(exception=None):
@@ -19,3 +17,4 @@ def close_db(exception=None):
 
     if db is not None:
         db.close()
+        

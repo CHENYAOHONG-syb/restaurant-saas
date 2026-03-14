@@ -1,28 +1,19 @@
-from flask import Blueprint, render_template, request, redirect
-from services.db import get_db
+from extensions import db
 
-menu = Blueprint("menu", __name__)
+class Menu(db.Model):
 
+    __tablename__ = "menu"
 
-@menu.route("/menu/<int:restaurant_id>")
-def show_menu(restaurant_id):
+    id = db.Column(db.Integer, primary_key=True)
 
-    db = get_db()
-
-    foods = db.execute(
-        "SELECT * FROM menu WHERE restaurant_id=?",
-        (restaurant_id,)
-    ).fetchall()
-
-    return render_template(
-        "menu.html",
-        foods=foods,
-        restaurant_id=restaurant_id
+    restaurant_id = db.Column(
+        db.Integer,
+        db.ForeignKey("restaurants.id"),
+        nullable=False
     )
 
-@menu.route("/add_food", methods=["POST"])
-def add_food():
+    name = db.Column(db.String(120))
 
-    create_food(request)
+    price = db.Column(db.Float)
 
-    return redirect(request.referrer)
+    category = db.Column(db.String(120))

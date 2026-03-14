@@ -1,19 +1,20 @@
 from extensions import db
 
-class Customer(db.Model):
+class Order(db.Model):
 
-    __tablename__ = "customers"
+    __tablename__ = "orders"
 
     id = db.Column(db.Integer, primary_key=True)
 
     restaurant_id = db.Column(
         db.Integer,
-        db.ForeignKey("restaurants.id")
+        db.ForeignKey("restaurants.id"),
+        nullable=False
     )
 
-    name = db.Column(db.String(120))
+    table_number = db.Column(db.Integer)
 
-    phone = db.Column(db.String(50))
+    status = db.Column(db.String(50))
 
     created_at = db.Column(
         db.DateTime,

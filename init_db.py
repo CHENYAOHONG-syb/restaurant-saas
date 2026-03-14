@@ -5,38 +5,38 @@ c = conn.cursor()
 
 # restaurants
 c.execute("""
-CREATE TABLE IF NOT EXISTS restaurants(
+CREATE TABLE IF NOT EXISTS restaurants (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 name TEXT,
-slug TEXT,
-owner_id INTEGER
+slug TEXT UNIQUE
 )
 """)
 
 # users
 c.execute("""
-CREATE TABLE IF NOT EXISTS users(
+CREATE TABLE IF NOT EXISTS users (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-username TEXT UNIQUE,
-password TEXT
+restaurant_id INTEGER,
+email TEXT,
+password TEXT,
+role TEXT
 )
 """)
 
 # menu
 c.execute("""
-CREATE TABLE IF NOT EXISTS menu(
+CREATE TABLE IF NOT EXISTS menu (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 restaurant_id INTEGER,
 name TEXT,
 price REAL,
-category TEXT,
-image TEXT
+category TEXT
 )
 """)
 
 # orders
 c.execute("""
-CREATE TABLE IF NOT EXISTS orders(
+CREATE TABLE IF NOT EXISTS orders (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 restaurant_id INTEGER,
 table_number INTEGER,
@@ -45,9 +45,9 @@ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
 
-# order items
+# order_items
 c.execute("""
-CREATE TABLE IF NOT EXISTS order_items(
+CREATE TABLE IF NOT EXISTS order_items (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 order_id INTEGER,
 food_id INTEGER,
@@ -57,11 +57,11 @@ qty INTEGER
 
 # cart
 c.execute("""
-CREATE TABLE IF NOT EXISTS cart(
+CREATE TABLE IF NOT EXISTS cart (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
 food_id INTEGER,
 table_number INTEGER,
+restaurant_id INTEGER,
 qty INTEGER
 )
 """)
