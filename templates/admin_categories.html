@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+{% extends "admin_layout.html" %}
+
+{% block content %}
+
+<title>Categories</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:30px;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+}
+
+.category{
+background:white;
+padding:10px;
+margin:10px 0;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+}
+
+button{
+background:#e74c3c;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:5px;
+cursor:pointer;
+}
+
+.add{
+background:#2ecc71;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Menu Categories</h1>
+
+<form action="/add_category" method="POST">
+
+<input type="text" name="name" placeholder="Category name">
+
+<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
+
+<button class="add">Add Category</button>
+
+</form>
+
+{% for cat in categories %}
+
+<div class="category">
+
+{{cat.name}}
+
+<form action="/delete_category/{{cat.id}}" method="POST">
+
+<button>Delete</button>
+
+</form>
+
+</div>
+
+{% endfor %}
+{% endblock %}
+</div>
+
+</body>
+
+</html>

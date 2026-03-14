@@ -1,0 +1,35 @@
+<h1>Staff Management</h1>
+
+<h2>Add Staff</h2>
+
+<form action="/add_staff" method="POST">
+
+<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
+
+<input name="name" placeholder="Staff name">
+
+<select name="role">
+
+<option value="manager">Manager</option>
+<option value="cashier">Cashier</option>
+<option value="kitchen">Kitchen</option>
+
+</select>
+
+<button>Add</button>
+
+</form>
+
+<hr>
+
+<h2>Staff List</h2>
+
+{% for w in workers %}
+
+<div>
+
+{{w.name}} - {{w.role}}
+
+</div>
+
+{% endfor %}

@@ -31,6 +31,13 @@ box-shadow:0 2px 5px rgba(0,0,0,0.1);
 
 <h1>Restaurant Dashboard</h1>
 
+<a href="/admin/menu/{{restaurant_id}}">Manage Menu</a>
+
+<a href="/admin/orders/{{restaurant_id}}">Orders</a>
+
+<a href="/admin/inventory/{{restaurant_id}}">Inventory</a>
+
+<a href="/orders/kitchen/{{restaurant_id}}">Kitchen Screen</a>
 <div class="card">
 <h2>Total Orders: {{total_orders}}</h2>
 </div>
@@ -40,66 +47,136 @@ box-shadow:0 2px 5px rgba(0,0,0,0.1);
 </div>
 
 <div class="card">
-<h2>Top Food</h2>
 
-{% if top_food %}
-<p>{{top_food.name}} ({{top_food.total}} orders)</p>
-{% else %}
-<p>No orders yet</p>
-{% endif %}
-
-</div>
-
-<div class="card">
-
-<h2>Sales Chart</h2>
+<h2>Orders Per Day</h2>
 
 <canvas id="salesChart"></canvas>
 
 </div>
 
+<div class="card">
+
+<h2>Top Foods</h2>
+
+<canvas id="foodChart"></canvas>
+
+</div>
+
 <script>
 
-const ctx = document.getElementById('salesChart');
+fetch("/api/sales/1")
 
-new Chart(ctx, {
+.then(res => res.json())
 
-type: 'bar',
+.then(data => {
+
+const labels = data.map(d => d.day)
+const values = data.map(d => d.orders)
+
+new Chart(document.getElementById("salesChart"), {
+
+type: "line",
 
 data: {
 
-labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+labels: labels,
 
 datasets: [{
-
 label: "Orders",
-
-data: [12,19,3,5,2,3,9],
-
-borderWidth: 1
-
+data: values
 }]
 
-},
+}
 
-options: {
+})
 
-scales: {
+})
 
-y: {
+</script>
 
-beginAtZero: true
+<script>
+
+fetch("/api/top_food/1")
+
+.then(res => res.json())
+
+.then(data => {
+
+const labels = data.map(d => d.name)
+const values = data.map(d => d.total)
+
+new Chart(document.getElementById("foodChart"), {
+
+type: "bar",
+
+data: {
+
+labels: labels,
+
+datasets: [{
+label: "Top Foods",
+data: values
+}]
 
 }
 
-}
+})
 
-}
+})
 
-});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2>Sales Chart</h2>
+
+<canvas id="salesChart"></canvas>
+
+<script>
+
+const data = {
+labels: {{hours|tojson}},
+datasets: [{
+label: 'Orders',
+data: {{counts|tojson}},
+borderWidth: 2
+}]
+};
+
+new Chart(
+document.getElementById('salesChart'),
+{
+type: 'line',
+data: data
+}
+);
+
+<h2>AI Insights</h2>
+
+<div>
+
+<p>🔥 Most Popular: {{popular.name}}</p>
+
+<p>⚠ Worst Selling: {{worst.name}}</p>
+
+<p>⏰ Peak Hour: {{peak.hour}}:00</p>
+
+<p>💰 Avg Order: RM {{avg.avg_value}}</p>
+
+</div>
+<h2>Smart Advisor</h2>
+
+<ul>
+
+{% for a in advice %}
+
+<li>{{a}}</li>
+
+{% endfor %}
+
+</ul>
 
 </script>
 
 </body>
-
 </html>

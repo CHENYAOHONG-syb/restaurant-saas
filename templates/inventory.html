@@ -1,0 +1,30 @@
+<h1>Inventory</h1>
+
+<form action="/add_inventory" method="POST">
+
+<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
+
+<input name="name" placeholder="Ingredient">
+
+<input name="stock" placeholder="Stock">
+
+<input name="unit" placeholder="Unit">
+
+<input name="cost" placeholder="Cost per unit">
+
+<button>Add</button>
+
+</form>
+
+<hr>
+
+{% for item in items %}
+
+<div>
+
+{{item.name}} : {{item.stock}} {{item.unit}}  
+Cost: RM {{item.cost}}
+
+</div>
+
+{% endfor %}

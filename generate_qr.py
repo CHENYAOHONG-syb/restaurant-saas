@@ -1,17 +1,9 @@
 import qrcode
-import os
 
-base_url = "https://web-production-202a.up.railway.app"
-os.makedirs("qr_tables", exist_ok=True)
+url="https://web-production-202a.up.railway.app"
 
-for table in range(1, 21):
+img=qrcode.make(url)
 
-    url = f"{base_url}/restaurant/1?table={table}"
+img.save("menu_qr.png")
 
-    img = qrcode.make(url)
-
-    filename = f"qr_tables/table_{table}.png"
-
-    img.save(filename)
-
-    print(f"Created QR for Table {table}")
+print("QR created")

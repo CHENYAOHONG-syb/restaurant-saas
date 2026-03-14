@@ -1,0 +1,27 @@
+<h1>My Restaurants</h1>
+
+<a href="/create_restaurant">Create Restaurant</a>
+
+<hr>
+
+{% for r in restaurants %}
+
+<div>
+
+<h3>{{r.name}}</h3>
+
+<a href="/dashboard/{{r.id}}">Dashboard</a>
+
+<a href="/pos/{{r.id}}">POS</a>
+
+<a href="/kitchen/{{r.id}}">Kitchen</a>
+
+<a href="/inventory/{{r.id}}">Inventory</a>
+
+<a href="/tables/{{r.id}}">Tables</a>
+
+</div>
+
+<hr>
+
+{% endfor %}

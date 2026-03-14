@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+{% extends "admin_layout.html" %}
+
+{% block content %}
+
+<title>Restaurant Settings</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:30px;
+}
+
+.container{
+max-width:500px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:10px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin:10px 0;
+}
+
+button{
+background:#2ecc71;
+color:white;
+border:none;
+padding:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Restaurant Settings</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+<input type="text" name="name" value="{{restaurant.name}}">
+
+<label>Theme Color</label>
+
+<input type="color" name="theme_color" value="{{restaurant.theme_color}}">
+
+<label>Logo</label>
+
+<input type="file" name="logo">
+
+<button>Save</button>
+
+</form>
+
+</div>
+{% endblock %}
+</body>
+
+</html>

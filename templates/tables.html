@@ -1,0 +1,27 @@
+<h1>Table Management</h1>
+
+{% for table in tables %}
+
+<div style="margin-bottom:10px">
+
+Table {{table.table_number}} - {{table.status}}
+
+<form action="/update_table" method="POST">
+
+<input type="hidden" name="table_id" value="{{table.id}}">
+
+<select name="status">
+
+<option>Free</option>
+<option>Occupied</option>
+<option>Cleaning</option>
+
+</select>
+
+<button>Update</button>
+
+</form>
+
+</div>
+
+{% endfor %}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Admin Dashboard</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+display:flex;
+}
+
+.sidebar{
+width:220px;
+background:#2c3e50;
+height:100vh;
+color:white;
+padding:20px;
+}
+
+.sidebar h2{
+text-align:center;
+}
+
+.sidebar a{
+display:block;
+color:white;
+text-decoration:none;
+padding:10px;
+margin:5px 0;
+border-radius:5px;
+}
+
+.sidebar a:hover{
+background:#34495e;
+}
+
+.content{
+flex:1;
+padding:30px;
+background:#f4f4f4;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>Restaurant</h2>
+
+<a href="/dashboard/{{restaurant_id}}">Dashboard</a>
+
+<a href="/admin/menu/{{restaurant_id}}">Menu</a>
+
+<a href="/admin/categories/{{restaurant_id}}">Categories</a>
+
+<a href="/admin/inventory/{{restaurant_id}}">Inventory</a>
+
+<a href="/admin/orders/{{restaurant_id}}">Orders</a>
+
+<a href="/admin/settings/{{restaurant_id}}">Settings</a>
+
+<a href="/billing/{{restaurant_id}}">Billing</a>
+
+</div>
+
+<div class="content">
+
+{% block content %}
+
+{% endblock %}
+
+</div>
+
+</body>
+
+</html>

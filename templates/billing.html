@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Billing</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:30px;
+}
+
+.plan{
+background:white;
+padding:20px;
+margin:10px;
+border-radius:10px;
+}
+
+button{
+background:#2ecc71;
+color:white;
+border:none;
+padding:10px;
+border-radius:5px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Choose Plan</h1>
+
+<div class="plan">
+
+<h2>Free</h2>
+
+<p>Basic menu</p>
+
+</div>
+
+<div class="plan">
+
+<h2>Pro - RM39/month</h2>
+
+<p>Unlimited menu</p>
+
+<form action="/subscribe/pro" method="POST">
+
+<button>Subscribe</button>
+
+</form>
+
+</div>
+
+<div class="plan">
+
+<h2>Enterprise - RM99/month</h2>
+
+<p>Full analytics</p>
+
+<form action="/subscribe/enterprise" method="POST">
+
+<button>Subscribe</button>
+
+</form>
+
+</div>
+
+</body>
+
+</html>

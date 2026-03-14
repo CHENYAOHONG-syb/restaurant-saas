@@ -1,152 +1,260 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
-<title>Kitchen Display</title>
-
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-
-body{
-font-family:Arial;
-background:#111;
-color:white;
-margin:0;
-padding:20px;
-}
-
-h1{
-text-align:center;
-font-size:40px;
-margin-bottom:30px;
-}
-
-#orders{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-gap:20px;
-}
-
-.order{
-background:#222;
-padding:25px;
-border-radius:10px;
-border-left:8px solid #00cc66;
-}
-
-.table{
-font-size:30px;
-font-weight:bold;
-}
-
-.timer{
-color:orange;
-margin-bottom:10px;
-}
-
-.food{
-font-size:22px;
-margin-bottom:4px;
-}
-
-button{
-padding:12px;
-font-size:18px;
-background:#00cc66;
-border:none;
-color:white;
-border-radius:5px;
-width:100%;
-margin-top:10px;
-}
-
-</style>
-
+  <meta charset="utf-8" />
+  <title>Kitchen Display</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#1b1b1d;
+      --muted:#777;
+      --accent-orange:#ffb347;
+      --accent-blue:#3498db;
+      --accent-green:#2ecc71;
+      --late-red:#e74c3c;
+      --done:#555;
+      --text:#fff;
+      font-size:16px;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,Helvetica,sans-serif;}
+    .wrap{padding:18px;max-width:1400px;margin:0 auto;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    h1{margin:0;font-size:28px}
+    #controls{display:flex;gap:10px;align-items:center}
+    button.ctrl{padding:8px 12px;border-radius:6px;border:0;cursor:pointer;font-weight:600}
+    button.full{background:#222;color:var(--text)}
+    #stats{font-size:16px;color:var(--muted)}
+    #orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+    .order{
+      background:var(--card);
+      border-radius:10px;
+      padding:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.5);
+      position:relative;
+      overflow:hidden;
+    }
+    .order .table{font-size:20px;font-weight:700;margin-bottom:6px}
+    .timer{font-size:18px;margin-bottom:10px;padding:8px;border-radius:6px;display:inline-block;font-weight:700}
+    .food{font-size:16px;margin:6px 0;color:var(--text)}
+    .controls-row{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+    .controls-row button{padding:8px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:700}
+    .pending{background:var(--accent-orange);color:#111}
+    .cooking{background:var(--accent-blue);color:#fff}
+    .ready{background:var(--accent-green);color:#fff;animation:blink 1s infinite}
+    .done{background:var(--done);color:#fff}
+    @keyframes blink{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}
+    .late { border-left:8px solid var(--late-red) !important; }
+    .meta{font-size:13px;color:var(--muted);margin-top:6px}
+    @media (max-width:520px){
+      .wrap{padding:8px}
+      h1{font-size:20px}
+    }
+  </style>
 </head>
-
 <body>
+  <div class="wrap">
+    <header>
+      <h1>Kitchen Orders</h1>
+      <div id="controls">
+        <div id="stats">Pending: 0 | Cooking: 0</div>
+        <button class="ctrl full" id="fullscreenBtn" aria-label="Toggle fullscreen">Fullscreen ⛶</button>
+      </div>
+    </header>
 
-<h1>Kitchen Orders</h1>
-
-<div id="orders"></div>
+    <main>
+      <div id="orders" role="list" aria-live="polite"></div>
+    </main>
+  </div>
 
 <script>
+  // Injected safely from server (Jinja recommended: {{ restaurant_id | tojson }})
+  const restaurant_id = {{ restaurant_id | tojson }};
+  const POLL_INTERVAL = 2000;
 
-const restaurant_id = {{restaurant_id}}
+  let lastOrderIds = new Set();
 
-let lastOrderCount = 0
+  // Small beep using Web Audio API for new orders
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.value = 0.05;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{ o.stop(); ctx.close(); }, 120);
+    } catch(e){ /* ignore on unsupported */ }
+  }
 
-async function loadOrders(){
+  // Helper to create element with classes and text
+  function el(tag, className, text){
+    const e = document.createElement(tag);
+    if(className) e.className = className;
+    if(text !== undefined) e.textContent = text;
+    return e;
+  }
 
-const res = await fetch(`/api/orders/${restaurant_id}`)
-const data = await res.json()
+  // Format ISO or Date string into minutes:seconds
+  function formatTimer(createdAt){
+    const created = new Date(createdAt);
+    if (isNaN(created)) return "00:00";
+    const now = new Date();
+    const secs = Math.floor((now - created)/1000);
+    const minutes = Math.floor(secs/60);
+    const seconds = secs % 60;
+    return {text: minutes + ":" + String(seconds).padStart(2,"0"), minutes};
+  }
 
-const container = document.getElementById("orders")
+  async function loadOrders(){
+    try {
+      const res = await fetch(`/orders/api/orders/${restaurant_id}`, {cache:"no-store"});
+      if(!res.ok) throw new Error("Failed loading orders");
+      const data = await res.json();
 
-container.innerHTML=""
+      const orders = Array.isArray(data.orders) ? data.orders : [];
+      const container = document.getElementById("orders");
+      container.innerHTML = "";
 
-data.orders.forEach(order => {
+      // sort by created ascending (oldest first)
+      orders.sort((a,b)=>{
+        const ta = new Date(a.created || a.created_at || null);
+        const tb = new Date(b.created || b.created_at || null);
+        return ta - tb;
+      });
 
-let foods=""
+      // stats
+      let pending = 0, cooking = 0;
 
-order.items.forEach(item => {
+      // compute new orders detection
+      const currentIds = new Set();
 
-foods+=`<div class="food">• ${item.name}</div>`
+      for(const order of orders){
+        currentIds.add(order.order_id);
 
-})
+        if(order.status === "pending") pending++;
+        if(order.status === "cooking") cooking++;
 
-container.innerHTML+=`
+        if(order.status === "done") continue; // hide done if desired
 
-<div class="order">
+        const card = el("div","order");
+        // color stripe
+        let colorClass = "pending";
+        if(order.status === "cooking") colorClass = "cooking";
+        if(order.status === "ready") colorClass = "ready";
+        if(order.status === "done") colorClass = "done";
 
-<div class="table">
-Table ${order.table}
-</div>
+        // Table
+        const t = el("div","table", `Table ${order.table || order.table_number || "-"}`);
+        card.appendChild(t);
 
-<div class="timer">
-Time: ${order.time}
-</div>
+        // Timer
+        const createdField = order.created || order.created_at || new Date().toISOString();
+        const tm = formatTimer(createdField);
+        const timerEl = el("div","timer", `⏱ ${tm.text}`);
+        if(tm.minutes >= 5) timerEl.classList.add("late");
+        if(order.status === "ready") timerEl.classList.add("ready");
+        card.appendChild(timerEl);
 
-${foods}
+        // Items
+        if(Array.isArray(order.items)){
+          for(const it of order.items){
+            const foodLine = el("div","food", `• ${it.qty}x ${it.name}`);
+            card.appendChild(foodLine);
+          }
+        }
 
-<form action="/done/${order.items[0].id}" method="POST">
+        // meta (order id)
+        const meta = el("div","meta", `#${order.order_id} • ${order.status}`);
+        card.appendChild(meta);
 
-<button>DONE</button>
+        // controls
+        const controls = el("div","controls-row");
+        const statuses = ["pending","cooking","ready","done"];
+        statuses.forEach(s=>{
+          const btn = el("button", s, s.charAt(0).toUpperCase() + s.slice(1));
+          btn.setAttribute("aria-label", `Set order ${order.order_id} to ${s}`);
+          // disable current status button
+          if(s === order.status) btn.disabled = true;
+          btn.addEventListener("click", async ()=>{
+            await updateStatus(order.order_id, s);
+          });
+          controls.appendChild(btn);
+        });
+        card.appendChild(controls);
 
-</form>
+        // left color bar via inline style for more visual
+        const colorBar = document.createElement("div");
+        colorBar.style.position = "absolute";
+        colorBar.style.left = "0";
+        colorBar.style.top = "0";
+        colorBar.style.bottom = "0";
+        colorBar.style.width = "8px";
+        colorBar.style.borderRadius = "10px 0 0 10px";
+        colorBar.style.background = (order.status === "pending" ? "linear-gradient(180deg,#ffb347,#ff9900)" :
+                                     order.status === "cooking" ? "linear-gradient(180deg,#3498db,#2b6fa3)" :
+                                     order.status === "ready" ? "linear-gradient(180deg,#2ecc71,#21a85b)" :
+                                     "#555");
+        card.appendChild(colorBar);
 
-</div>
+        container.appendChild(card);
+      }
 
-`
+      // update stats
+      document.getElementById("stats").textContent = `Pending: ${pending} | Cooking: ${cooking}`;
 
-})
+      // New order detection: if currentIds contains an id not in lastOrderIds
+      let isNew = false;
+      for(const id of currentIds){
+        if(!lastOrderIds.has(id)) { isNew = true; break; }
+      }
+      if(isNew && lastOrderIds.size > 0){ // only beep after initial load
+        beep();
+        // visual flash: briefly pulse background
+        document.body.animate([{filter:"brightness(1.2)"},{filter:"brightness(1)"}],{duration:300});
+      }
 
-if(data.orders.length > lastOrderCount){
+      lastOrderIds = currentIds;
 
-alert("🔔 New Order!")
+    } catch(err){
+      console.error("loadOrders error:", err);
+      // optional: show small error status
+      document.getElementById("stats").textContent = "Error loading orders";
+    }
+  }
 
-const audio = new Audio("/static/alert.mp3")
-audio.play()
+  async function updateStatus(order_id, status){
+    try {
+      const res = await fetch(`/update_status/${order_id}/${status}`, {method:"POST"});
+      if(!res.ok) throw new Error("update failed");
+      // reload
+      await loadOrders();
+    } catch(e){
+      console.error("updateStatus", e);
+      alert("Failed to update order status");
+    }
+  }
 
-}
+  // Fullscreen toggle
+  document.getElementById("fullscreenBtn").addEventListener("click", ()=>{
+    if(!document.fullscreenElement){
+      document.documentElement.requestFullscreen().catch(()=>{/*ignore*/});
+    } else {
+      document.exitFullscreen().catch(()=>{/*ignore*/});
+    }
+  });
 
-lastOrderCount=data.orders.length
+  // Polling
+  loadOrders();
+  setInterval(loadOrders, POLL_INTERVAL);
 
-}
-
-setInterval(loadOrders,2000)
-
-loadOrders()
-
-document.body.onclick=()=>{
-document.documentElement.requestFullscreen()
-}
-
+  // keyboard 'f' toggles fullscreen
+  document.addEventListener("keydown", (e)=>{
+    if(e.key.toLowerCase()==='f') document.getElementById("fullscreenBtn").click();
+  });
 </script>
-
 </body>
-
 </html>
-

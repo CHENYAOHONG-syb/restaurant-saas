@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Table QR Codes</title>
+</head>
+
+<body>
+
+<h1>Restaurant {{restaurant_id}} QR Codes</h1>
+
+{% for table in tables %}
+
+<div style="margin-bottom:40px">
+
+<h2>Table {{table}}</h2>
+
+<img src="/generate_qr/{{restaurant_id}}/{{table}}">
+
+</div>
+
+{% endfor %}
+
+</body>
+
+</html>

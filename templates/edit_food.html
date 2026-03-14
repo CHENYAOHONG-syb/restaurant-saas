@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Edit Food</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+padding:30px;
+}
+
+.container{
+max-width:500px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:10px;
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin:10px 0;
+}
+
+button{
+padding:12px;
+background:#2ecc71;
+border:none;
+color:white;
+font-size:18px;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Edit Menu Item</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+<input type="text" name="name" value="{{food.name}}">
+
+<input type="number" name="price" value="{{food.price}}">
+
+<select name="category">
+
+<option value="main">Main</option>
+<option value="drink">Drink</option>
+<option value="dessert">Dessert</option>
+
+</select>
+
+<input type="file" name="image">
+
+<button type="submit">Update Food</button>
+
+</form>
+
+</div>
+
+</body>
+
+</html>

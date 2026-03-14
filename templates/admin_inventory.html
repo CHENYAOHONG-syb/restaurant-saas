@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+{% extends "admin_layout.html" %}
+
+{% block content %}
+
+<title>Inventory</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:30px;
+}
+
+.item{
+background:white;
+padding:10px;
+margin:10px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Inventory</h1>
+
+<form action="/add_inventory" method="POST">
+
+<input type="text" name="name" placeholder="Ingredient">
+
+<input type="number" name="stock" placeholder="Stock">
+
+<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
+
+<button>Add</button>
+
+</form>
+
+{% for item in items %}
+
+<div class="item">
+
+{{item.name}} — {{item.stock}}
+
+</div>
+
+{% endfor %}
+{% endblock %}
+
+</body>
+
+</html>

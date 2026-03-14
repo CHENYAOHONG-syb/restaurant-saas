@@ -1,0 +1,23 @@
+<h1>Food Cost</h1>
+
+<h2>{{food.name}}</h2>
+
+<ul>
+
+{% for i in ingredients %}
+
+<li>
+
+{{i.name}} - {{i.qty}} - RM {{i.cost}}
+
+</li>
+
+{% endfor %}
+
+</ul>
+
+<h3>Total Cost: RM {{total_cost}}</h3>
+
+<h3>Selling Price: RM {{food.price}}</h3>
+
+<h2>Profit: RM {{food.price - total_cost}}</h2>

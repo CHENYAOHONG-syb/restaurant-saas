@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+{% extends "admin_layout.html" %}
+
+{% block content %}
+<title>Menu Admin</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+padding:20px;
+}
+
+h1{
+text-align:center;
+}
+
+.food{
+background:white;
+padding:10px;
+margin:10px;
+border-radius:8px;
+display:flex;
+align-items:center;
+}
+
+.food{
+display:flex;
+justify-content:space-between;
+}
+
+.food img{
+width:60px;
+height:60px;
+border-radius:6px;
+margin-right:10px;
+}
+
+.food-name{
+flex:1;
+}
+
+button{
+background:#e74c3c;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#c0392b;
+}
+
+.add-form{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+}
+
+input,select{
+padding:8px;
+margin:5px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Menu Manager</h1>
+
+<div class="add-form">
+
+<form action="/add_food" method="POST" enctype="multipart/form-data">
+
+<input type="text" name="name" placeholder="Food name" required>
+
+<input type="number" name="price" placeholder="Price" required>
+
+<select name="category">
+<option value="main">Main</option>
+<option value="drink">Drink</option>
+<option value="dessert">Dessert</option>
+</select>
+
+<input type="file" name="image" required>
+
+<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
+
+<button type="submit">Add Food</button>
+
+</form>
+
+</div>
+
+{% for food in foods %}
+
+<div class="food">
+
+<img src="{{ url_for('static', filename=food.image.replace('static/','')) }}">
+
+<div class="food-name">
+
+{{food.name}} - RM {{food.price}}
+
+</div>
+
+<form action="/delete_food/{{food.id}}" method="POST">
+<a href="/edit_food/{{food.id}}">
+
+<button type="button" style="background:#3498db">Edit</button>
+
+</a>
+
+<form action="/delete_food/{{food.id}}" method="POST">
+
+<button>Delete</button>
+
+</form>
+
+<button>Delete</button>
+
+</form>
+
+</div>
+
+{% endfor %}
+{% endblock %}
+</body>
+
+</html>
