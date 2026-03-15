@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 from utils.security import login_required
 
 kitchen_api = Blueprint('kitchen_api', __name__)

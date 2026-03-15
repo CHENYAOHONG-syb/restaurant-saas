@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 
 inventory = Blueprint("inventory", __name__)
 

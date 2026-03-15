@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 import uuid
 
 auth = Blueprint("auth", __name__)

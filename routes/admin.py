@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, session
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
 from services.subscription import check_subscription

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 import qrcode
 from flask import send_file
 import io

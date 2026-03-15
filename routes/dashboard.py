@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect
-from services.db import get_db
+from flask_sqlalchemy import SQLAlchemy
 from services.analytics import (
     most_popular_food,
     worst_food,
