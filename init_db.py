@@ -1,99 +1,17 @@
-import sqlite3
+from app import create_app
+from app.extensions import db
 
-conn = sqlite3.connect("database.db")
-c = conn.cursor()
+# 🔥 强制加载所有 models（关键！）
+from app.models.menu import Menu
+from app.models.user import User
+from app.models.restaurant import Restaurant
+from app.models.order import Order
+from app.models.order_item import OrderItem
 
-# restaurants
-c.execute("""
-CREATE TABLE IF NOT EXISTS restaurants (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT,
-slug TEXT UNIQUE
-)
-""")
+app = create_app()
 
-# users
-c.execute("""
-CREATE TABLE IF NOT EXISTS users (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
-email TEXT,
-password TEXT,
-role TEXT
-)
-""")
+with app.app_context():
+    db.drop_all()   # 🔥 先清掉
+    db.create_all() # 🔥 再重建
 
-# menu
-c.execute("""
-CREATE TABLE IF NOT EXISTS menu (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
-name TEXT,
-price REAL,
-category TEXT
-)
-""")
-
-# orders
-c.execute("""
-CREATE TABLE IF NOT EXISTS orders (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
-table_number INTEGER,
-status TEXT,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
-
-# order_items
-c.execute("""
-CREATE TABLE IF NOT EXISTS order_items (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-order_id INTEGER,
-food_id INTEGER,
-qty INTEGER
-)
-""")
-
-# cart
-c.execute("""
-CREATE TABLE IF NOT EXISTS cart (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-food_id INTEGER,
-table_number INTEGER,
-restaurant_id INTEGER,
-qty INTEGER
-)
-""")
-
-# inventory
-c.execute("""
-CREATE TABLE IF NOT EXISTS inventory(
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
-name TEXT,
-stock INTEGER
-)
-""")
-
-# categories
-c.execute("""
-CREATE TABLE IF NOT EXISTS categories(
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-restaurant_id INTEGER,
-name TEXT
-)
-""")
-
-# demo restaurant
-c.execute("INSERT INTO restaurants (name) VALUES ('Demo Restaurant')")
-
-# demo menu
-c.execute("INSERT INTO menu (restaurant_id,name,price) VALUES (1,'Fried Rice',8)")
-c.execute("INSERT INTO menu (restaurant_id,name,price) VALUES (1,'Noodles',7)")
-c.execute("INSERT INTO menu (restaurant_id,name,price) VALUES (1,'Milk Tea',5)")
-
-conn.commit()
-conn.close()
-
-print("Database created successfully")
+    print("Database created!")

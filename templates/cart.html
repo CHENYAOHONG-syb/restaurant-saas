@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Cart</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f8f9fb;
+    padding:20px;
+}
+
+/* 标题 */
+h1{
+    text-align:center;
+}
+
+/* 卡片 */
+.item{
+    background:white;
+    border-radius:12px;
+    padding:15px;
+    margin:12px 0;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    text-align:center; /* 🔥 核心：整体居中 */
+}
+
+/* 食物名字 */
+.item h3{
+    margin:0;
+}
+
+/* 价格 */
+.price{
+    color:#888;
+    margin-top:6px;
+}
+
+/* subtotal */
+.subtotal{
+    font-weight:bold;
+    margin-top:6px;
+}
+
+/* 按钮基础 */
+button{
+    padding:12px 20px;
+    font-size:14px;
+    font-weight:bold;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    margin-top:10px;
+    transition:all 0.2s ease;
+}
+
+/* hover效果 */
+button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 14px rgba(0,0,0,0.2);
+}
+
+/* Remove（🔥居中 + 宽度优化） */
+.remove-btn{
+    background:linear-gradient(135deg,#ff4e50,#f00000);
+    color:white;
+    width:60%;
+}
+
+/* Checkout */
+.checkout-btn{
+    background:linear-gradient(135deg,#56ab2f,#a8e063);
+    color:white;
+    width:100%;
+    font-size:16px;
+}
+
+/* Clear */
+.clear-btn{
+    background:linear-gradient(135deg,#f7971e,#ffd200);
+    color:white;
+    width:100%;
+}
+
+/* 总价 */
+.total-box{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-top:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    text-align:center;
+}
+
+/* 空购物车 */
+.empty{
+    text-align:center;
+    color:#888;
+    margin-top:50px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🛒 Your Cart</h1>
+
+{% if items|length == 0 %}
+
+<div class="empty">
+    <h3>Cart is empty 😢</h3>
+    <p>Go add some delicious food!</p>
+</div>
+
+{% else %}
+
+{% set total = 0 %}
+
+{% for item in items %}
+
+<div class="item">
+
+<h3>{{item.food.name}}</h3>
+
+<p class="price">
+RM {{item.food.price}} × {{item.quantity}}
+</p>
+
+<p class="subtotal">
+Subtotal: RM {{item.food.price * item.quantity}}
+</p>
+
+<form action="/orders/remove_from_cart" method="POST">
+    <input type="hidden" name="cart_id" value="{{item.id}}">
+    <button class="remove-btn">Remove</button>
+</form>
+
+</div>
+
+{% set total = total + (item.food.price * item.quantity) %}
+
+{% endfor %}
+
+<div class="total-box">
+
+<h2>Total: RM {{total}}</h2>
+
+<form action="/orders/checkout" method="POST">
+    <input type="hidden" name="table" value="{{table}}">
+    <button class="checkout-btn">Checkout</button>
+</form>
+
+<form action="/orders/clear_cart" method="POST">
+    <input type="hidden" name="table" value="{{table}}">
+    <button class="clear-btn">Clear Cart</button>
+</form>
+
+</div>
+
+{% endif %}
+
+</body>
+</html>

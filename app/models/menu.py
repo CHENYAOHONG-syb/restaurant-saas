@@ -1,5 +1,4 @@
-from extensions import db
-
+from app.extensions import db
 
 class Menu(db.Model):
 
@@ -7,20 +6,10 @@ class Menu(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    restaurant_id = db.Column(
-        db.Integer,
-        db.ForeignKey("restaurants.id"),
-        nullable=False
-    )
+    name = db.Column(db.String(150), nullable=False)
 
-    name = db.Column(
-        db.String(120),
-        nullable=False
-    )
+    price = db.Column(db.Float)
 
-    price = db.Column(
-        db.Float,
-        nullable=False
-    )
+    description = db.Column(db.String(255))
 
-    category = db.Column(db.String(120))
+    restaurant_id = db.Column(db.Integer, db.ForeignKey("restaurants.id"))

@@ -1,5 +1,4 @@
-from extensions import db
-
+from app.extensions import db
 
 class OrderItem(db.Model):
 
@@ -7,20 +6,10 @@ class OrderItem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    order_id = db.Column(
-        db.Integer,
-        db.ForeignKey("orders.id"),
-        nullable=False
-    )
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id"))
 
-    food_id = db.Column(
-        db.Integer,
-        db.ForeignKey("menu.id"),
-        nullable=False
-    )
+    food_id = db.Column(db.Integer, db.ForeignKey("menu.id"))
 
-    qty = db.Column(
-        db.Integer,
-        nullable=False,
-        default=1
-    )
+    quantity = db.Column(db.Integer)
+
+    food = db.relationship("Menu")

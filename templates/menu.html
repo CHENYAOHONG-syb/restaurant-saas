@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f8f9fa;
+        }
+
+        .menu-container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 10px;
+            background: orange;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="menu-container">
+    <h2>Menu</h2>
+
+    {% if items %}
+        {% for item in items %}
+            <div class="item">
+                <h3>{{ item.name }}</h3>
+                <p>{{ item.description }}</p>
+                <p>RM {{ item.price }}</p>
+
+                <button class="btn">Add to Cart</button>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No items found</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

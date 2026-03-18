@@ -1,4 +1,6 @@
-flask
-gunicorn
+Flask
+Flask-SQLAlchemy
+flask-jwt-extended
+Werkzeug
 qrcode
 pillow

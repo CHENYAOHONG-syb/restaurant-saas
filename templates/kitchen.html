@@ -26,13 +26,13 @@
     button.full{background:#222;color:var(--text)}
     #stats{font-size:16px;color:var(--muted)}
     #orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-    .order{
-      background:var(--card);
-      border-radius:10px;
-      padding:14px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.5);
-      position:relative;
-      overflow:hidden;
+    .order {
+    padding:18px;
+    }
+    .order hr{
+    border:0;
+    border-top:1px solid #333;
+    margin:10px 0;
     }
     .order .table{font-size:20px;font-weight:700;margin-bottom:6px}
     .timer{font-size:18px;margin-bottom:10px;padding:8px;border-radius:6px;display:inline-block;font-weight:700}
@@ -41,7 +41,11 @@
     .controls-row button{padding:8px 10px;border-radius:6px;border:0;cursor:pointer;font-weight:700}
     .pending{background:var(--accent-orange);color:#111}
     .cooking{background:var(--accent-blue);color:#fff}
-    .ready{background:var(--accent-green);color:#fff;animation:blink 1s infinite}
+    .ready {
+    background: var(--accent-green);
+    color:#fff;
+    box-shadow: 0 0 10px rgba(46,204,113,0.6);
+    }
     .done{background:var(--done);color:#fff}
     @keyframes blink{0%{opacity:1}50%{opacity:0.5}100%{opacity:1}}
     .late { border-left:8px solid var(--late-red) !important; }
@@ -142,22 +146,28 @@
 
         const card = el("div","order");
         // color stripe
-        let colorClass = "pending";
-        if(order.status === "cooking") colorClass = "cooking";
-        if(order.status === "ready") colorClass = "ready";
-        if(order.status === "done") colorClass = "done";
-
+        const nextMap = {
+        pending: "cooking",
+        cooking: "ready",
+        ready: "done"
+        };
         // Table
         const t = el("div","table", `Table ${order.table || order.table_number || "-"}`);
         card.appendChild(t);
 
         // Timer
-        const createdField = order.created || order.created_at || new Date().toISOString();
-        const tm = formatTimer(createdField);
-        const timerEl = el("div","timer", `⏱ ${tm.text}`);
-        if(tm.minutes >= 5) timerEl.classList.add("late");
-        if(order.status === "ready") timerEl.classList.add("ready");
-        card.appendChild(timerEl);
+        orders.sort((a,b)=>{
+         const ta = new Date(a.created_at);
+         const tb = new Date(b.created_at);
+
+         const lateA = (Date.now()-ta)/60000 > 5;
+         const lateB = (Date.now()-tb)/60000 > 5;
+
+         if(lateA && !lateB) return -1;
+         if(!lateA && lateB) return 1;
+
+         return ta - tb;
+        });
 
         // Items
         if(Array.isArray(order.items)){

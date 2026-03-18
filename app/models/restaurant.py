@@ -1,4 +1,4 @@
-from extensions import db
+from app.extensions import db
 
 
 class Restaurant(db.Model):
@@ -22,3 +22,7 @@ class Restaurant(db.Model):
         db.DateTime,
         server_default=db.func.now()
     )
+    
+class Restaurant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100))
