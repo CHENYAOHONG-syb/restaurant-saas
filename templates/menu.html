@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <a href="/cart">🛒 View Cart</a>
     <title>Menu</title>
     <style>
         body {
@@ -41,8 +42,11 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description }}</p>
                 <p>RM {{ item.price }}</p>
-
-                <button class="btn">Add to Cart</button>
+                 <form action="/orders/add_to_cart" method="POST">
+    <input type="hidden" name="food_id" value="{{ item.id }}">
+    <input type="hidden" name="table" value="1">
+    <button class="btn">Add to Cart</button>
+</form>
             </div>
         {% endfor %}
     {% else %}
