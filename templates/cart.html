@@ -1,167 +1,471 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "public_layout.html" %}
 
-<title>Cart</title>
+{% block title %}Table {{ table }} Order Review{% endblock %}
 
+{% block extra_styles %}
 <style>
+    .cart-shell {
+        display: grid;
+        gap: 1.25rem;
+    }
 
-body{
-    font-family:Arial;
-    background:#f8f9fb;
-    padding:20px;
-}
+    .cart-grid {
+        display: grid;
+        gap: 1.25rem;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.88fr);
+    }
 
-/* 标题 */
-h1{
-    text-align:center;
-}
+    .cart-items {
+        display: grid;
+        gap: 1rem;
+    }
 
-/* 卡片 */
-.item{
-    background:white;
-    border-radius:12px;
-    padding:15px;
-    margin:12px 0;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    text-align:center; /* 🔥 核心：整体居中 */
-}
+    .cart-confirm-hero .card-body,
+    .cart-summary-card .card-body,
+    .cart-line-card .card-body {
+        padding: 1.2rem;
+    }
 
-/* 食物名字 */
-.item h3{
-    margin:0;
-}
+    .cart-hero-checklist {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1rem;
+    }
 
-/* 价格 */
-.price{
-    color:#888;
-    margin-top:6px;
-}
+    .cart-line-card {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.45rem;
+        background: rgba(255, 253, 249, 0.97);
+        box-shadow: var(--guest-shadow);
+    }
 
-/* subtotal */
-.subtotal{
-    font-weight:bold;
-    margin-top:6px;
-}
+    .cart-line-card .card-body {
+        display: grid;
+        gap: 0.95rem;
+    }
 
-/* 按钮基础 */
-button{
-    padding:12px 20px;
-    font-size:14px;
-    font-weight:bold;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    margin-top:10px;
-    transition:all 0.2s ease;
-}
+    .cart-line-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 0.85rem;
+    }
 
-/* hover效果 */
-button:hover{
-    transform:translateY(-2px);
-    box-shadow:0 6px 14px rgba(0,0,0,0.2);
-}
+    .cart-line-name {
+        font-size: 1.08rem;
+        font-weight: 800;
+        margin-bottom: 0.3rem;
+    }
 
-/* Remove（🔥居中 + 宽度优化） */
-.remove-btn{
-    background:linear-gradient(135deg,#ff4e50,#f00000);
-    color:white;
-    width:60%;
-}
+    .cart-line-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
 
-/* Checkout */
-.checkout-btn{
-    background:linear-gradient(135deg,#56ab2f,#a8e063);
-    color:white;
-    width:100%;
-    font-size:16px;
-}
+    .cart-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.42rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid var(--guest-line);
+        color: var(--guest-muted);
+        font-size: 0.88rem;
+        font-weight: 600;
+    }
 
-/* Clear */
-.clear-btn{
-    background:linear-gradient(135deg,#f7971e,#ffd200);
-    color:white;
-    width:100%;
-}
+    .cart-line-price-note {
+        color: var(--guest-muted);
+        font-size: 0.9rem;
+    }
 
-/* 总价 */
-.total-box{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    margin-top:20px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-    text-align:center;
-}
+    .cart-line-subtotal {
+        display: grid;
+        gap: 0.18rem;
+        text-align: right;
+    }
 
-/* 空购物车 */
-.empty{
-    text-align:center;
-    color:#888;
-    margin-top:50px;
-}
+    .cart-line-subtotal small {
+        color: var(--guest-muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
 
+    .cart-line-subtotal strong {
+        font-size: 1.18rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .cart-line-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        padding-top: 0.25rem;
+        border-top: 1px solid rgba(234, 223, 210, 0.86);
+    }
+
+    .cart-line-actions form {
+        margin: 0;
+    }
+
+    .cart-line-actions .btn {
+        min-width: 9.5rem;
+    }
+
+    .cart-summary-card {
+        position: sticky;
+        top: 1rem;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.7rem;
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 247, 239, 0.96));
+        box-shadow: var(--guest-shadow);
+    }
+
+    .cart-summary-card .card-body {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .cart-summary-intro {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .cart-confidence-box {
+        display: grid;
+        gap: 0.45rem;
+        padding: 0.95rem 1rem;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.1rem;
+        background: rgba(255, 255, 255, 0.66);
+    }
+
+    .cart-confidence-box strong {
+        font-size: 0.96rem;
+    }
+
+    .cart-confidence-box small {
+        color: var(--guest-muted);
+    }
+
+    .cart-total-panel {
+        display: grid;
+        gap: 0.8rem;
+        padding: 1rem 1.05rem;
+        border-radius: 1.25rem;
+        background: rgba(44, 33, 27, 0.95);
+        color: #fff;
+        box-shadow: var(--guest-shadow);
+    }
+
+    .cart-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .cart-summary-row strong {
+        color: #fff;
+    }
+
+    .cart-summary-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 1rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .cart-summary-total span {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.92rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .cart-summary-total strong {
+        font-size: 1.65rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .cart-summary-help {
+        color: var(--guest-muted);
+        font-size: 0.92rem;
+        margin: 0;
+    }
+
+    .cart-note-wrap {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .cart-note {
+        border-radius: 1.1rem;
+        min-height: 112px;
+        resize: vertical;
+    }
+
+    .cart-secondary-actions {
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .cart-empty-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1.2rem;
+    }
+
+    .cart-mobile-dock {
+        position: sticky;
+        bottom: 0.85rem;
+        z-index: 15;
+    }
+
+    .cart-mobile-dock-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.35rem;
+        background: rgba(44, 33, 27, 0.96);
+        color: #fff;
+        box-shadow: var(--guest-shadow);
+    }
+
+    .cart-mobile-dock-card small {
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .cart-mobile-dock-copy {
+        display: grid;
+        gap: 0.18rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .cart-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-summary-card {
+            position: static;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .cart-line-head,
+        .cart-mobile-dock-card {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .cart-line-subtotal {
+            text-align: left;
+        }
+
+        .cart-line-actions .btn,
+        .cart-mobile-dock-card .btn,
+        .cart-empty-actions .btn {
+            width: 100%;
+        }
+
+        .cart-empty-actions {
+            align-items: stretch;
+        }
+    }
 </style>
+{% endblock %}
 
-</head>
+{% block top_actions %}
+<a class="btn btn-secondary" href="/">Back Home</a>
+{% if menu_url %}
+<a class="btn btn-primary" href="{{ menu_url }}">Continue Ordering</a>
+{% endif %}
+{% endblock %}
 
-<body>
-
-<h1>🛒 Your Cart</h1>
-
-{% if items|length == 0 %}
-
-<div class="empty">
-    <h3>Cart is empty 😢</h3>
-    <p>Go add some delicious food!</p>
-</div>
-
-{% else %}
-
-{% set total = 0 %}
-
+{% block body %}
+{% set has_items = items|length > 0 %}
+{% set ns = namespace(total=0, count=0) %}
 {% for item in items %}
-
-<div class="item">
-
-<h3>{{item.food.name}}</h3>
-
-<p class="price">
-RM {{item.food.price}} × {{item.quantity}}
-</p>
-
-<p class="subtotal">
-Subtotal: RM {{item.food.price * item.quantity}}
-</p>
-
-<form action="/orders/remove_from_cart" method="POST">
-    <input type="hidden" name="cart_id" value="{{item.id}}">
-    <button class="remove-btn">Remove</button>
-</form>
-
-</div>
-
-{% set total = total + (item.food.price * item.quantity) %}
-
+    {% set item_subtotal = (item.food.price if item.food else 0) * item.quantity %}
+    {% set ns.total = ns.total + item_subtotal %}
+    {% set ns.count = ns.count + item.quantity %}
 {% endfor %}
 
-<div class="total-box">
+<div class="cart-shell">
+    <section class="guest-hero card border-0 cart-confirm-hero">
+        <div class="card-body">
+            <span class="guest-kicker">Final review</span>
+            <h1 class="guest-heading">Review your table order before you confirm</h1>
+            <p class="guest-subheading">
+                This is the final check before the kitchen receives your order. You can still add more dishes or adjust the list first.
+            </p>
+            <div class="cart-hero-checklist">
+                <span class="guest-chip"><strong>Table {{ table }}</strong>{% if restaurant %} at {{ restaurant.name }}{% endif %}</span>
+                <span class="guest-chip"><strong>{{ ns.count }}</strong> item{% if ns.count != 1 %}s{% endif %} selected</span>
+                <span class="guest-chip"><strong>RM {{ '%.2f'|format(ns.total) }}</strong> current total</span>
+                <span class="guest-chip">Sent only after you confirm</span>
+            </div>
+        </div>
+    </section>
 
-<h2>Total: RM {{total}}</h2>
+    <div class="cart-grid">
+        <section class="cart-items">
+            <div class="guest-card card border-0">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+                        <div>
+                            <h2 class="guest-section-title">Your order items</h2>
+                            <p class="guest-section-copy">Check the quantity, price, and line total for each dish before sending everything together.</p>
+                        </div>
+                        {% if menu_url %}
+                        <a class="btn btn-secondary" href="{{ menu_url }}">Continue Ordering</a>
+                        {% endif %}
+                    </div>
 
-<form action="/orders/checkout" method="POST">
-    <input type="hidden" name="table" value="{{table}}">
-    <button class="checkout-btn">Checkout</button>
-</form>
+                    {% if has_items %}
+                    <div class="d-grid gap-3">
+                        {% for item in items %}
+                        {% set unit_price = item.food.price if item.food else 0 %}
+                        {% set subtotal = unit_price * item.quantity %}
+                        <article class="cart-line-card card border-0">
+                            <div class="card-body">
+                                <div class="cart-line-head">
+                                    <div>
+                                        <div class="cart-line-name">{{ item.food.name if item.food else 'Menu item' }}</div>
+                                        <div class="cart-line-meta">
+                                            <span class="cart-pill">Quantity {{ item.quantity }}</span>
+                                            <span class="cart-pill">RM {{ '%.2f'|format(unit_price) }} each</span>
+                                        </div>
+                                        <div class="cart-line-price-note mt-2">You can still adjust this before the order is sent.</div>
+                                    </div>
+                                    <div class="cart-line-subtotal">
+                                        <small>Line total</small>
+                                        <strong>RM {{ '%.2f'|format(subtotal) }}</strong>
+                                    </div>
+                                </div>
+                                <div class="cart-line-actions">
+                                    <form action="/orders/add_to_cart" method="post" data-loading-label="Adding...">
+                                        <input type="hidden" name="food_id" value="{{ item.food_id }}">
+                                        <input type="hidden" name="table" value="{{ table }}">
+                                        <input type="hidden" name="restaurant_id" value="{{ restaurant_id }}">
+                                        <button class="btn btn-secondary" type="submit">Add One More</button>
+                                    </form>
+                                    <form action="/orders/remove_from_cart" method="post" data-loading-label="Removing...">
+                                        <input type="hidden" name="cart_id" value="{{ item.id }}">
+                                        <input type="hidden" name="table" value="{{ table }}">
+                                        <input type="hidden" name="restaurant_id" value="{{ restaurant_id }}">
+                                        <button class="btn btn-outline-danger" type="submit">Remove Item</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="guest-empty-state">
+                        <h3>Your order is empty</h3>
+                        <p>Browse the menu to add your first dish before sending anything to the kitchen.</p>
+                        <div class="cart-empty-actions">
+                            {% if menu_url %}
+                            <a class="btn btn-primary" href="{{ menu_url }}">Start Ordering</a>
+                            {% endif %}
+                            <a class="btn btn-secondary" href="/">Back Home</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
 
-<form action="/orders/clear_cart" method="POST">
-    <input type="hidden" name="table" value="{{table}}">
-    <button class="clear-btn">Clear Cart</button>
-</form>
+        <aside class="cart-summary-card card border-0" id="checkout-panel">
+            <div class="card-body">
+                {% if has_items %}
+                <div class="cart-summary-intro">
+                    <span class="guest-form-kicker">Confirm order</span>
+                    <h2 class="guest-section-title">Ready to send this to the kitchen?</h2>
+                    <p class="guest-section-copy">Confirm once you are happy with the dishes, quantities, and total for table {{ table }}.</p>
+                </div>
 
+                <div class="cart-confidence-box">
+                    <strong>Nothing is sent until you confirm</strong>
+                    <small>You can still continue ordering, remove items, or leave a short kitchen note below.</small>
+                </div>
+
+                <div class="cart-total-panel">
+                    <div class="cart-summary-row">
+                        <span>Items</span>
+                        <strong>{{ ns.count }}</strong>
+                    </div>
+                    <div class="cart-summary-row">
+                        <span>Subtotal</span>
+                        <strong>RM {{ '%.2f'|format(ns.total) }}</strong>
+                    </div>
+                    <div class="cart-summary-total">
+                        <span>Total</span>
+                        <strong>RM {{ '%.2f'|format(ns.total) }}</strong>
+                    </div>
+                </div>
+                <p class="cart-summary-help">This amount reflects the dishes currently selected for your table.</p>
+
+                <form action="/orders/checkout" method="post" data-loading-label="Sending order..." id="checkout-form">
+                    <input type="hidden" name="table" value="{{ table }}">
+                    <input type="hidden" name="restaurant_id" value="{{ restaurant_id }}">
+                    <div class="cart-note-wrap mb-3">
+                        <label class="form-label" for="note">Add a note for the kitchen <span class="text-muted">(optional)</span></label>
+                        <textarea class="form-control cart-note" id="note" name="note" maxlength="255" placeholder="Anything the kitchen should know? Example: less spicy, no ice, or serve this first."></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-lg w-100" type="submit">Confirm Order</button>
+                </form>
+
+                <div class="cart-secondary-actions">
+                    {% if menu_url %}
+                    <a class="btn btn-secondary" href="{{ menu_url }}">Continue Ordering</a>
+                    {% endif %}
+                    <form action="/orders/clear_cart" method="post" data-loading-label="Clearing...">
+                        <input type="hidden" name="table" value="{{ table }}">
+                        <input type="hidden" name="restaurant_id" value="{{ restaurant_id }}">
+                        <button class="btn btn-outline-danger w-100" type="submit">Clear This Order</button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="cart-summary-intro">
+                    <span class="guest-form-kicker">Nothing to confirm yet</span>
+                    <h2 class="guest-section-title">Start with your first dish</h2>
+                    <p class="guest-section-copy">Once you add items from the menu, your total and confirm button will appear here.</p>
+                </div>
+                {% if menu_url %}
+                <a class="btn btn-primary btn-lg w-100" href="{{ menu_url }}">Browse the Menu</a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+
+    {% if has_items %}
+    <div class="cart-mobile-dock d-lg-none">
+        <div class="cart-mobile-dock-card">
+            <div class="cart-mobile-dock-copy">
+                <strong>RM {{ '%.2f'|format(ns.total) }}</strong>
+                <small>{{ ns.count }} item{% if ns.count != 1 %}s{% endif %} ready to send</small>
+            </div>
+            <button class="btn btn-primary" type="submit" form="checkout-form">Confirm Order</button>
+        </div>
+    </div>
+    {% endif %}
 </div>
-
-{% endif %}
-
-</body>
-</html>
+{% endblock %}

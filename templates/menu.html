@@ -1,59 +1,771 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <a href="/cart">🛒 View Cart</a>
-    <title>Menu</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f8f9fa;
+{% extends "public_layout.html" %}
+
+{% block title %}{{ restaurant.name if restaurant else 'Menu' }}{% endblock %}
+
+{% macro menu_fallback_copy(category_name) -%}
+    {% set category_key = (category_name or '')|lower %}
+    {% if 'drink' in category_key or 'beverage' in category_key or 'coffee' in category_key or 'tea' in category_key or 'juice' in category_key %}
+        A refreshing option to go with your meal.
+    {% elif 'dessert' in category_key or 'sweet' in category_key or 'cake' in category_key or 'ice cream' in category_key %}
+        A sweet finish to your order.
+    {% elif 'starter' in category_key or 'appetizer' in category_key or 'snack' in category_key or 'side' in category_key %}
+        An easy first pick for the table.
+    {% elif 'main' in category_key or 'rice' in category_key or 'noodle' in category_key or 'grill' in category_key or 'signature' in category_key %}
+        A satisfying choice for the table.
+    {% else %}
+        A house favorite for easy ordering.
+    {% endif %}
+{%- endmacro %}
+
+{% macro menu_placeholder_caption(category_name) -%}
+    {% set category_key = (category_name or '')|lower %}
+    {% if 'drink' in category_key or 'beverage' in category_key or 'coffee' in category_key or 'tea' in category_key or 'juice' in category_key %}
+        Fresh pour
+    {% elif 'dessert' in category_key or 'sweet' in category_key or 'cake' in category_key or 'ice cream' in category_key %}
+        Sweet finish
+    {% elif 'starter' in category_key or 'appetizer' in category_key or 'snack' in category_key or 'side' in category_key %}
+        Start here
+    {% else %}
+        Signature plate
+    {% endif %}
+{%- endmacro %}
+
+{% macro menu_placeholder_variant(category_name) -%}
+    {% set category_key = (category_name or '')|lower %}
+    {% if 'drink' in category_key or 'beverage' in category_key or 'coffee' in category_key or 'tea' in category_key or 'juice' in category_key %}
+        dish-media--drink
+    {% elif 'dessert' in category_key or 'sweet' in category_key or 'cake' in category_key or 'ice cream' in category_key %}
+        dish-media--dessert
+    {% elif 'starter' in category_key or 'appetizer' in category_key or 'snack' in category_key or 'side' in category_key %}
+        dish-media--starter
+    {% else %}
+        dish-media--main
+    {% endif %}
+{%- endmacro %}
+
+{% block extra_styles %}
+<style>
+    .menu-shell {
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .menu-hero-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.9fr);
+    }
+
+    .menu-storefront {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .menu-storefront::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -4rem auto;
+        width: 14rem;
+        height: 14rem;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(209, 111, 63, 0.14), transparent 70%);
+        pointer-events: none;
+    }
+
+    .menu-storefront .card-body,
+    .menu-order-panel .card-body {
+        padding: 1.45rem;
+    }
+
+    .menu-storefront-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .menu-table-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.42rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        color: var(--guest-text);
+        font-size: 0.92rem;
+        font-weight: 700;
+    }
+
+    .menu-hero-copy {
+        max-width: 38rem;
+    }
+
+    .menu-hero-copy h1 {
+        margin-bottom: 0.65rem;
+    }
+
+    .menu-hero-copy p {
+        margin-bottom: 0;
+    }
+
+    .menu-quick-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1rem;
+    }
+
+    .menu-order-panel {
+        height: 100%;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.65rem;
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 247, 239, 0.98));
+        box-shadow: var(--guest-shadow);
+    }
+
+    .menu-order-panel-copy {
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .menu-order-panel .btn {
+        width: 100%;
+    }
+
+    .menu-order-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 0.7rem;
+        border-radius: 999px;
+        background: rgba(209, 111, 63, 0.14);
+        color: var(--guest-accent-strong);
+        font-weight: 800;
+    }
+
+    .menu-category-nav {
+        position: sticky;
+        top: 0.7rem;
+        z-index: 12;
+        display: flex;
+        gap: 0.65rem;
+        overflow-x: auto;
+        padding: 0.35rem;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 999px;
+        background: rgba(255, 253, 249, 0.92);
+        box-shadow: var(--guest-shadow);
+        backdrop-filter: blur(14px);
+        scrollbar-width: none;
+    }
+
+    .menu-category-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .menu-category-link {
+        white-space: nowrap;
+        text-decoration: none;
+        padding: 0.72rem 1rem;
+        border-radius: 999px;
+        color: var(--guest-muted);
+        font-weight: 700;
+        transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .menu-category-link:hover,
+    .menu-category-link:focus {
+        color: var(--guest-text);
+        background: rgba(255, 255, 255, 0.78);
+        transform: translateY(-1px);
+    }
+
+    .menu-category-link.is-active {
+        color: #fff;
+        background: var(--guest-text);
+        box-shadow: 0 10px 18px rgba(44, 33, 27, 0.16);
+    }
+
+    .menu-sections {
+        display: grid;
+        gap: 1.6rem;
+    }
+
+    .menu-section {
+        display: grid;
+        gap: 0.9rem;
+        scroll-margin-top: 5.6rem;
+    }
+
+    .menu-section-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: end;
+        gap: 0.75rem;
+    }
+
+    .menu-section-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+        color: var(--guest-muted);
+        font-size: 0.92rem;
+    }
+
+    .menu-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    }
+
+    .dish-card {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.55rem;
+        background: rgba(255, 253, 249, 0.98);
+        box-shadow: var(--guest-shadow);
+        overflow: hidden;
+    }
+
+    .dish-card .card-body {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr);
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .dish-media {
+        position: relative;
+        min-height: 100%;
+        border-radius: 1.15rem;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(255, 210, 172, 0.72), transparent 7rem),
+            linear-gradient(145deg, #fff0df 0%, #fffdfa 100%);
+        border: 1px solid rgba(234, 223, 210, 0.9);
+    }
+
+    .dish-media--drink {
+        background:
+            radial-gradient(circle at top right, rgba(173, 214, 255, 0.72), transparent 7rem),
+            linear-gradient(145deg, #edf8ff 0%, #fffdfa 100%);
+    }
+
+    .dish-media--dessert {
+        background:
+            radial-gradient(circle at top right, rgba(255, 202, 223, 0.72), transparent 7rem),
+            linear-gradient(145deg, #fff0f5 0%, #fffdfa 100%);
+    }
+
+    .dish-media--starter {
+        background:
+            radial-gradient(circle at top right, rgba(255, 225, 174, 0.75), transparent 7rem),
+            linear-gradient(145deg, #fff5e3 0%, #fffdfa 100%);
+    }
+
+    .dish-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .dish-media-fallback {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 0.9rem;
+    }
+
+    .dish-media-fallback::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 68% 32%, rgba(255, 255, 255, 0.72), transparent 26%),
+            radial-gradient(circle at 36% 72%, rgba(255, 255, 255, 0.42), transparent 24%);
+        opacity: 0.85;
+    }
+
+    .dish-media-token {
+        position: relative;
+        z-index: 1;
+        width: 3.65rem;
+        height: 3.65rem;
+        border-radius: 1.1rem;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--guest-accent-strong);
+        font-size: 1.28rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+
+    .dish-media-caption {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 0.25rem;
+        color: var(--guest-accent-strong);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .dish-media-caption small {
+        color: var(--guest-muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .dish-content {
+        display: grid;
+        gap: 0.8rem;
+        min-width: 0;
+    }
+
+    .dish-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .dish-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+    }
+
+    .dish-category {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.68rem;
+        border-radius: 999px;
+        background: var(--guest-accent-soft);
+        color: var(--guest-accent-strong);
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .dish-highlight {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: rgba(255, 244, 226, 0.96);
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        color: #9b5c32;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
+    .dish-service-note {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.62rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        color: var(--guest-muted);
+        font-size: 0.77rem;
+        font-weight: 700;
+    }
+
+    .dish-name {
+        font-size: 1.14rem;
+        font-weight: 800;
+        line-height: 1.25;
+        margin: 0;
+    }
+
+    .dish-price-wrap {
+        display: grid;
+        gap: 0.15rem;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .dish-price-wrap small {
+        color: var(--guest-muted);
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .dish-price {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--guest-text);
+        line-height: 1;
+    }
+
+    .dish-description {
+        color: var(--guest-muted);
+        margin: 0;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .dish-cta-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid rgba(234, 223, 210, 0.88);
+    }
+
+    .dish-cta-copy {
+        display: grid;
+        gap: 0.18rem;
+        min-width: 0;
+    }
+
+    .dish-cta-copy strong {
+        font-size: 0.92rem;
+    }
+
+    .dish-cta-copy small {
+        color: var(--guest-muted);
+    }
+
+    .dish-actions .btn {
+        min-width: 10.25rem;
+        padding-top: 0.82rem;
+        padding-bottom: 0.82rem;
+    }
+
+    .menu-dock {
+        position: sticky;
+        bottom: 0.85rem;
+        z-index: 18;
+        margin-top: 0.4rem;
+    }
+
+    .menu-dock-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.95rem 1rem;
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.45rem;
+        background: rgba(44, 33, 27, 0.96);
+        box-shadow: var(--guest-shadow);
+        color: #fff;
+    }
+
+    .menu-dock-copy {
+        display: grid;
+        gap: 0.15rem;
+    }
+
+    .menu-dock-copy small {
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .menu-dock-copy strong {
+        font-size: 1rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .menu-hero-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .menu-category-nav {
+            top: 0.45rem;
+            margin-inline: -0.1rem;
         }
 
-        .menu-container {
-            max-width: 600px;
-            margin: auto;
+        .dish-card .card-body {
+            grid-template-columns: 1fr;
         }
 
-        .item {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .dish-media {
+            min-height: 9.5rem;
         }
 
-        .btn {
-            padding: 10px;
-            background: orange;
-            color: white;
-            border: none;
-            border-radius: 5px;
+        .dish-meta-row,
+        .dish-cta-row,
+        .menu-storefront-head,
+        .menu-dock-card {
+            flex-direction: column;
+            align-items: stretch;
         }
-    </style>
-</head>
-<body>
 
-<div class="menu-container">
-    <h2>Menu</h2>
+        .dish-price-wrap {
+            text-align: left;
+        }
+
+        .dish-actions,
+        .dish-actions .btn,
+        .menu-dock-card .btn {
+            width: 100%;
+        }
+
+        .dish-description {
+            -webkit-line-clamp: 4;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block top_actions %}
+<a class="btn btn-secondary" href="/">Back Home</a>
+<a class="btn btn-primary" href="/orders/cart?table={{ table }}&restaurant_id={{ restaurant_id or '' }}">
+    View Order{% if cart_count %} · {{ cart_count }}{% endif %}
+</a>
+{% endblock %}
+
+{% block body %}
+{% set grouped_items = items|groupby('category') %}
+{% set visible_cart_count = cart_count or 0 %}
+
+<div class="menu-shell">
+    <section class="menu-hero-grid">
+        <article class="guest-hero card border-0 menu-storefront">
+            <div class="card-body">
+                <div class="menu-storefront-head">
+                    <span class="guest-kicker">Guest Menu</span>
+                    <span class="menu-table-pill">Table {{ table }}</span>
+                </div>
+                <div class="menu-hero-copy mt-3">
+                    <h1 class="guest-heading">{{ restaurant.name if restaurant else 'Restaurant Menu' }}</h1>
+                    <p class="guest-subheading">
+                        Pick what looks good, add it in one tap, and send the full table order when everyone is ready.
+                    </p>
+                </div>
+                <div class="menu-quick-facts">
+                    <span class="guest-chip"><strong>{{ items|length }}</strong> dishes ready to browse</span>
+                    {% if grouped_items %}
+                    <span class="guest-chip"><strong>{{ grouped_items|length }}</strong> categories</span>
+                    {% endif %}
+                    {% if restaurant and restaurant.address %}
+                    <span class="guest-chip">{{ restaurant.address }}</span>
+                    {% endif %}
+                    {% if visible_cart_count %}
+                    <span class="guest-chip"><strong>{{ visible_cart_count }}</strong> item{% if visible_cart_count != 1 %}s{% endif %} already in your order</span>
+                    {% else %}
+                    <span class="guest-chip">Add dishes as you go</span>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+
+        <aside class="menu-order-panel card border-0">
+            <div class="card-body menu-order-panel-copy">
+                <div>
+                    <span class="guest-form-kicker">Order progress</span>
+                    <h2 class="guest-section-title mb-1">Keep the table moving</h2>
+                    <p class="guest-section-copy">Browse by category, tap to add, then open your order review whenever you want to confirm.</p>
+                </div>
+                <div class="guest-chip-row">
+                    <span class="guest-chip"><strong>1</strong> browse dishes</span>
+                    <span class="guest-chip"><strong>2</strong> add favorites</span>
+                    <span class="guest-chip"><strong>3</strong> review and send</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <div>
+                        <div class="text-muted small text-uppercase fw-semibold">Current cart</div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span class="menu-order-count">{{ visible_cart_count }}</span>
+                            <div class="text-muted small">
+                                {% if visible_cart_count %}
+                                items waiting for review
+                                {% else %}
+                                start adding dishes below
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a class="btn btn-primary btn-lg" href="/orders/cart?table={{ table }}&restaurant_id={{ restaurant_id or '' }}">
+                    {% if visible_cart_count %}
+                    Review Order ({{ visible_cart_count }})
+                    {% else %}
+                    Open Order Review
+                    {% endif %}
+                </a>
+                <a class="btn btn-secondary" href="#menu-sections">Jump to Categories</a>
+            </div>
+        </aside>
+    </section>
 
     {% if items %}
-        {% for item in items %}
-            <div class="item">
-                <h3>{{ item.name }}</h3>
-                <p>{{ item.description }}</p>
-                <p>RM {{ item.price }}</p>
-                 <form action="/orders/add_to_cart" method="POST">
-    <input type="hidden" name="food_id" value="{{ item.id }}">
-    <input type="hidden" name="table" value="1">
-    <button class="btn">Add to Cart</button>
-</form>
-            </div>
+    <nav class="menu-category-nav" aria-label="Menu categories">
+        {% for category in grouped_items %}
+        {% set category_name = category.grouper or 'Chef Picks' %}
+        {% set category_anchor = category_name|lower|replace(' ', '-')|replace('&', 'and')|replace('/', '-') %}
+        <a class="menu-category-link {% if loop.first %}is-active{% endif %}" href="#category-{{ category_anchor }}">{{ category_name|title }}</a>
         {% endfor %}
+    </nav>
+
+    <div class="menu-sections" id="menu-sections">
+        {% for category in grouped_items %}
+        {% set category_name = category.grouper or 'Chef Picks' %}
+        {% set category_anchor = category_name|lower|replace(' ', '-')|replace('&', 'and')|replace('/', '-') %}
+        <section class="menu-section" id="category-{{ category_anchor }}">
+            <div class="menu-section-head">
+                <div>
+                    <h2 class="guest-section-title mb-1">{{ category_name|title }}</h2>
+                    <p class="guest-section-copy">{{ category.list|length }} dish{% if category.list|length != 1 %}es{% endif %} you can add right away.</p>
+                </div>
+                <div class="menu-section-meta">
+                    <span>Easy to add for table {{ table }}</span>
+                </div>
+            </div>
+            <div class="menu-grid">
+                {% for item in category.list %}
+                <article class="dish-card card border-0 h-100">
+                    <div class="card-body">
+                        <div class="dish-media {{ menu_placeholder_variant(category_name) }}">
+                            {% if item.image %}
+                            <img src="{{ item.image }}" alt="{{ item.name }}">
+                            {% else %}
+                            <div class="dish-media-fallback">
+                                <span class="dish-media-token">{{ item.name[:1]|upper if item.name else 'D' }}</span>
+                                <div class="dish-media-caption">
+                                    {{ menu_placeholder_caption(category_name) }}
+                                    <small>{{ category_name|title }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="dish-content">
+                            <div class="dish-meta-row">
+                                <div class="dish-badges">
+                                    <span class="dish-category">{{ item.category or 'menu item' }}</span>
+                                    {% if loop.index0 == 0 %}
+                                    <span class="dish-highlight">Chef&apos;s Pick</span>
+                                    {% endif %}
+                                    <span class="dish-service-note">Fresh for table service</span>
+                                </div>
+                                <div class="dish-price-wrap">
+                                    <small>Price</small>
+                                    <div class="dish-price">RM {{ '%.2f'|format(item.price) }}</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="dish-name">{{ item.name }}</h3>
+                                <p class="dish-description mt-2">{{ item.description or menu_fallback_copy(category_name) }}</p>
+                            </div>
+
+                            <div class="dish-cta-row">
+                                <div class="dish-cta-copy">
+                                    <strong>Ready to add</strong>
+                                    <small>Tap once to include this in the order.</small>
+                                </div>
+                                <form action="/orders/add_to_cart" method="post" class="dish-actions" data-loading-label="Adding...">
+                                    <input type="hidden" name="food_id" value="{{ item.id }}">
+                                    <input type="hidden" name="table" value="{{ table }}">
+                                    <input type="hidden" name="restaurant_id" value="{{ restaurant_id or item.restaurant_id }}">
+                                    <button class="btn btn-primary btn-lg" type="submit">Add to Order</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
     {% else %}
-        <p>No items found</p>
+    <div class="guest-card card border-0">
+        <div class="card-body">
+            <div class="guest-empty-state">
+                <h3>No dishes are available right now</h3>
+                <p>Please check back in a moment or ask the restaurant team for today&apos;s menu.</p>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
+    {% if visible_cart_count %}
+    <div class="menu-dock">
+        <div class="menu-dock-card">
+            <div class="menu-dock-copy">
+                <strong>{{ visible_cart_count }} item{% if visible_cart_count != 1 %}s{% endif %} ready for review</strong>
+                <small>Open your order, check the total, and send it to the kitchen when the table is ready.</small>
+            </div>
+            <a class="btn btn-primary" href="/orders/cart?table={{ table }}&restaurant_id={{ restaurant_id or '' }}">Review Order</a>
+        </div>
+    </div>
+    {% endif %}
 </div>
+{% endblock %}
 
-</body>
-</html>
+{% block extra_scripts %}
+<script>
+    (() => {
+        const links = Array.from(document.querySelectorAll(".menu-category-link"));
+        const sections = links
+            .map((link) => document.querySelector(link.getAttribute("href")))
+            .filter(Boolean);
+
+        if (!links.length || !sections.length) {
+            return;
+        }
+
+        const setActive = (id) => {
+            links.forEach((link) => {
+                const isActive = link.getAttribute("href") === `#${id}`;
+                link.classList.toggle("is-active", isActive);
+            });
+        };
+
+        links.forEach((link) => {
+            link.addEventListener("click", () => {
+                const targetId = (link.getAttribute("href") || "").replace("#", "");
+                if (targetId) {
+                    setActive(targetId);
+                }
+            });
+        });
+
+        if ("IntersectionObserver" in window) {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+                    if (visible) {
+                        setActive(visible.target.id);
+                    }
+                },
+                {
+                    rootMargin: "-20% 0px -55% 0px",
+                    threshold: [0.2, 0.4, 0.7],
+                }
+            );
+
+            sections.forEach((section) => observer.observe(section));
+        }
+
+        setActive(sections[0].id);
+    })();
+</script>
+{% endblock %}

@@ -1,37 +1,330 @@
 {% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
+
+{% block page_title %}Order #{{ order.id }}{% endblock %}
+{% block page_description %}Review status, next steps, table impact, inventory effect, and order history from one backstage view.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="{{ url_for('admin.order_manager', restaurant_id=restaurant_id) }}">Back to Orders</a>
+<a class="btn btn-secondary" href="{{ receipt_url }}" target="_blank" rel="noopener">Print Receipt</a>
+{% if restaurant and restaurant.slug %}
+<a class="btn btn-primary" href="{{ url_for('menu.restaurant_menu', slug=restaurant.slug, table=order.table_number or 1) }}">Open Guest Menu</a>
+{% endif %}
+{% endblock %}
 
 {% block content %}
+<section class="metric-grid mb-4">
+    {{ ui.metric_card("Order", "#" ~ order.id, "Restaurant " ~ restaurant.name) }}
+    {{ ui.metric_card("Current status", status_label, "Updated through the controlled service workflow.") }}
+    {{ ui.metric_card("Source", source_context.label, source_context.summary) }}
+    {{ ui.metric_card("Table", "Table " ~ order.table_number if order.table_number else "Takeaway", "Dining context for this order.") }}
+    {{ ui.metric_card("Total", currency ~ " " ~ ('%.2f'|format(total)), "Calculated from current order line items.") }}
+</section>
 
-<h1>Order #{{order.id}}</h1>
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Order summary</h2>
+                        <p class="text-muted mb-0">This section explains what the order is, which table it belongs to, and who should act next.</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                        {{ ui.status_badge(source_context.label, 'secondary') }}
+                        {{ ui.status_badge(status_label, order.status) }}
+                    </div>
+                </div>
 
-<p><b>Table:</b> {{order.table_number}}</p>
-<p><b>Status:</b> {{order.status}}</p>
-<p><b>Time:</b> {{order.created_at}}</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Restaurant</th>
+                                <td>{{ restaurant.name }}</td>
+                                <th scope="row">Customer</th>
+                                <td>{{ customer_label }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Dining mode</th>
+                                <td>{{ dining_mode }}</td>
+                                <th scope="row">Source</th>
+                                <td>{{ source_context.label }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Created</th>
+                                <td>{% if order.created_at %}{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}-{% endif %}</td>
+                                <th scope="row">Table</th>
+                                <td>{% if order.table_number %}Table {{ order.table_number }}{% else %}Not assigned{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Order value</th>
+                                <td>{{ currency }} {{ '%.2f'|format(total) }}</td>
+                                <th scope="row">Last activity</th>
+                                <td>{% if updated_at %}{{ updated_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}-{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Payment status</th>
+                                <td>{{ ui.status_badge(payment_status, payment_badge_class) }}</td>
+                                <th scope="row">Payment method</th>
+                                <td>{{ payment_method }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Paid at</th>
+                                <td>{% if paid_at %}{{ paid_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}&mdash;{% endif %}</td>
+                                <th scope="row">Current stage</th>
+                                <td>{{ status_label }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-<h2>Items</h2>
+                <div class="mt-3">
+                    <h3 class="h6 mb-1">Order note</h3>
+                    {% if note_context.has_note %}
+                    <p class="mb-0">{{ note_context.text }}</p>
+                    {% else %}
+                    <p class="text-muted mb-0">{{ note_context.text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
-<table border="1" width="100%" cellpadding="10">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Allowed actions</h2>
+                <p class="text-muted mb-3">Only the next legal actions for the current order state and your role are shown here.</p>
 
-<tr>
-<th>Food</th>
-<th>Quantity</th>
-<th>Price</th>
-</tr>
+                {% if is_terminal %}
+                <div class="alert alert-secondary mb-0" role="alert">
+                    {% if order.status == 'paid' %}
+                    Order is complete. No further workflow actions are available.
+                    {% else %}
+                    Order is cancelled. No further workflow actions are available.
+                    {% endif %}
+                </div>
+                {% else %}
+                {{ ui.order_action_buttons(restaurant_id, order.id, allowed_statuses, [], action_endpoint='admin.update_order_from_detail', empty_label='No actions are available for your role at this stage.', action_labels=action_labels) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 
-{% for item in items %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Table linkage</h2>
+                        <p class="text-muted mb-0">See whether this order is still holding a table and what operations can happen next on the floor.</p>
+                    </div>
+                    {% if table_context.has_table %}
+                    {{ ui.status_badge(table_context.table.status|replace('_', ' ')|title, table_context.table.status) }}
+                    {% endif %}
+                </div>
 
-<tr>
+                {% if table_context.has_table %}
+                <div class="table-responsive mb-3">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Table</th>
+                                <td>Table {{ table_context.table.table_number }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Current status</th>
+                                <td>{{ table_context.table.status|replace('_', ' ')|title }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Order holding table</th>
+                                <td>{{ "Yes" if table_context.holding_table else "No" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Operational note</th>
+                                <td>{{ table_context.summary }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-<td>{{item.name}}</td>
+                {% if table_context.can_mark_available %}
+                <form action="{{ url_for('admin.update_table', restaurant_id=restaurant_id, table_id=table_context.table.id) }}" method="post" data-loading-label="Saving...">
+                    <input type="hidden" name="status" value="available">
+                    <input type="hidden" name="return_order_id" value="{{ order.id }}">
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit">Mark Table Available</button>
+                    </div>
+                </form>
+                {% elif table_context.release_reason %}
+                <div class="alert alert-secondary mb-0" role="alert">
+                    {{ table_context.release_reason }}
+                </div>
+                {% endif %}
+                {% else %}
+                {{ ui.empty_state("No table attached", table_context.summary) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-<td>{{item.qty}}</td>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Inventory linkage</h2>
+                        <p class="text-muted mb-0">This shows whether stock has already been touched and why.</p>
+                    </div>
+                    {{ ui.status_badge(inventory_context.status|replace('_', ' ')|title, inventory_context.status) }}
+                </div>
 
-<td>RM {{item.price}}</td>
+                <p class="mb-3">{{ inventory_context.summary }}</p>
 
-</tr>
+                <div class="table-responsive mb-3">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Inventory deducted</th>
+                                <td>{{ "Yes" if inventory_context.applied_at else "No" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Deducted at</th>
+                                <td>{% if inventory_context.applied_at %}{{ inventory_context.applied_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}-{% endif %}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Restored after cancel</th>
+                                <td>{{ "Yes" if inventory_context.restored_event else "No" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-{% endfor %}
+                {% if inventory_context.lines %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Menu item</th>
+                                <th>Inventory item</th>
+                                <th>Needed</th>
+                                <th>Current stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in inventory_context.lines %}
+                            <tr>
+                                <td>{{ line.menu_name }}</td>
+                                <td>{{ line.inventory_name }}</td>
+                                <td>{{ line.total_required }} {{ line.unit }}</td>
+                                <td>{% if line.current_stock is not none %}{{ line.current_stock }} {{ line.unit }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                {{ ui.empty_state("No inventory mapping yet", "Attach a primary inventory item to the menu item if you want stock checks and deduction to appear here.") }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 
-</table>
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Line items</h2>
+                <p class="text-muted mb-3">Use this section as the bill-facing view of what was ordered and how the subtotal was built.</p>
 
+                {% if line_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Unit price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in line_items %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td>{{ currency }} {{ '%.2f'|format(item.unit_price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ currency }} {{ '%.2f'|format(item.subtotal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                {{ ui.empty_state("No line items", "This order currently has no line items attached.") }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Amount summary</h2>
+                <p class="text-muted mb-3">A simple commercial breakdown for the current order.</p>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Subtotal</th>
+                                <td class="text-end">{{ currency }} {{ '%.2f'|format(subtotal) }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Total</th>
+                                <td class="text-end fw-bold fs-5">{{ currency }} {{ '%.2f'|format(total) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small mb-0 mt-3">Service charges and taxes are not configured for this workspace yet, so the total currently matches the subtotal.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h4 mb-1">Order timeline</h2>
+        <p class="text-muted mb-3">A lightweight event history that shows how this order moved through service.</p>
+
+        {% if timeline %}
+        <div class="list-group list-group-flush">
+            {% for entry in timeline %}
+            <div class="list-group-item px-0">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            {{ ui.status_badge(entry.title, entry.status) }}
+                            {% if entry.actor_label %}
+                            <span class="text-muted small">by {{ entry.actor_label }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="mb-0">{{ entry.description }}</p>
+                    </div>
+                    <div class="text-muted small text-md-end">
+                        {% if entry.timestamp %}{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        {{ ui.empty_state("No timeline yet", "Order events will appear here as the order moves through service.") }}
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

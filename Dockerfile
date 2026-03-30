@@ -1,11 +1,12 @@
-FROM python:3.10
+FROM python:3.11-slim
 
 WORKDIR /app
 
 COPY . .
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-RUN pip3 install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python3", "run.py"]
+CMD gunicorn run:app --bind 0.0.0.0:${PORT:-10000} --workers 2 --timeout 120

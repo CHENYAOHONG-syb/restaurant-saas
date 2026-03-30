@@ -1,54 +1,44 @@
-<!DOCTYPE html>
-<html>
+{% extends "public_layout.html" %}
+{% import "_components.html" as ui %}
 
-<head>
+{% block title %}Restaurants{% endblock %}
 
-<title>Restaurant SaaS</title>
+{% block body %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h2 class="mb-1">Restaurants</h2>
+                <p class="text-muted mb-0">Browse the current restaurant workspaces available from this public index.</p>
+            </div>
+            <span class="badge text-bg-secondary">{{ restaurants|length if restaurants else 0 }} restaurants</span>
+        </div>
 
-<style>
-
-body{
-font-family:Arial;
-background:#f5f5f5;
-padding:30px;
-}
-
-.card{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:10px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-a{
-text-decoration:none;
-font-size:18px;
-color:black;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>Restaurant SaaS</h1>
-
-{% for r in restaurants %}
-
-<div class="card">
-
-<a href="/restaurant/{{r.id}}?table=1">
-
-{{r.name}}
-
-</a>
-
+        {% if restaurants %}
+        {{ ui.client_search_toolbar("restaurantsTable", "Search restaurant name or address", "No matching restaurants", "Try another search term.") }}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle mb-0" id="restaurantsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Open</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in restaurants %}
+                    <tr data-search="{{ (r.name ~ ' ' ~ (r.address or ''))|lower }}">
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.address if r.address is defined and r.address else 'No address listed.' }}</td>
+                        <td><a class="btn btn-primary btn-sm" href="/menu/r/{{ r.slug }}?table=1">Open Menu</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {{ ui.empty_state("No restaurants yet", "Once restaurants are created, they can appear here as a browsable directory.") }}
+        {% endif %}
+    </div>
 </div>
-
-{% endfor %}
-
-</body>
-
-</html>
+{% endblock %}

@@ -1,26 +1,52 @@
-<!DOCTYPE html>
-<html>
+{% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
 
-<head>
-<title>Table QR Codes</title>
-</head>
+{% block page_title %}Table QR Codes{% endblock %}
+{% block page_description %}Review the QR codes assigned to each table so they are ready for print or display inside the dining room.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="{{ url_for('admin.table_manager', restaurant_id=restaurant_id) }}">Back</a>
+{% endblock %}
 
-<body>
-
-<h1>Restaurant {{restaurant_id}} QR Codes</h1>
-
-{% for table in tables %}
-
-<div style="margin-bottom:40px">
-
-<h2>Table {{table}}</h2>
-
-<img src="/generate_qr/{{restaurant_id}}/{{table}}">
-
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+            <div>
+                <h2 class="h4 mb-1">QR code set</h2>
+                <p class="text-muted mb-0">Each table links directly into its guest ordering context.</p>
+            </div>
+            <span class="badge text-bg-secondary">{{ qr_rows|length if qr_rows else 0 }} tables</span>
+        </div>
+        {% if qr_rows %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Table</th>
+                        <th>QR Code</th>
+                        <th>Guest Link</th>
+                        <th>Usage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in qr_rows %}
+                    <tr>
+                        <td>Table {{ row.table.table_number }}</td>
+                        <td class="text-center">
+                            <img class="img-fluid border rounded p-2 bg-white" src="{{ row.image_url }}" alt="QR code for table {{ row.table.table_number }}" style="max-width: 180px;">
+                        </td>
+                        <td>
+                            <a href="{{ row.guest_url }}" target="_blank" rel="noreferrer">{{ row.guest_url }}</a>
+                        </td>
+                        <td>Print or display this code at table {{ row.table.table_number }}.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {{ ui.empty_state("No tables found", "Generate table records first so QR codes can be created.") }}
+        {% endif %}
+    </div>
 </div>
-
-{% endfor %}
-
-</body>
-
-</html>
+{% endblock %}

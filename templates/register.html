@@ -1,62 +1,70 @@
-<!DOCTYPE html>
-<html>
+{% extends "public_form.html" %}
 
-<head>
+{% block title %}Create Your Owner Account{% endblock %}
+{% block form_kicker %}Step 2 — Create your owner account{% endblock %}
 
-<title>Restaurant Signup</title>
+{% block top_actions %}
+<a class="btn btn-secondary" href="/">Back Home</a>
+<a class="btn btn-secondary" href="/auth/login">Already have an account?</a>
+{% endblock %}
 
-<style>
-
-body{
-font-family:Arial;
-background:#f4f4f4;
-padding:40px;
-}
-
-.container{
-max-width:400px;
-margin:auto;
-background:white;
-padding:30px;
-border-radius:10px;
-}
-
-input{
-width:100%;
-padding:10px;
-margin:10px 0;
-}
-
-button{
-background:#2ecc71;
-color:white;
-border:none;
-padding:10px;
-width:100%;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-<h2>Create Account</h2>
-
-<form method="POST">
-
-<input type="text" name="username" placeholder="Username">
-
-<input type="password" name="password" placeholder="Password">
-
-<button>Create Account</button>
-
-</form>
-
+{% block form_content %}
+{% set values = form_data or {} %}
+<div class="mb-4">
+    <h2 class="mb-2">Create your owner account</h2>
+    <p class="text-muted mb-2">Create an owner account to manage your restaurant, menus, and orders from one workspace.</p>
+    <p class="text-muted small mb-0">This step connects the first owner login to the restaurant workspace you just created.</p>
 </div>
 
-</body>
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
 
-</html>
+{% if not restaurants %}
+<div class="alert alert-warning" role="alert">
+    Create your restaurant workspace first, then come back here to finish the owner account setup.
+</div>
+{% endif %}
+
+<form method="post" data-loading-label="Creating account...">
+    <div class="mb-3">
+        <label class="form-label" for="restaurant_id">Restaurant</label>
+        <select class="form-select" id="restaurant_id" name="restaurant_id" required>
+            <option value="">Choose your restaurant</option>
+            {% for restaurant in restaurants %}
+            <option value="{{ restaurant.id }}" {% if selected_restaurant_id == restaurant.id %}selected{% endif %}>{{ restaurant.name }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-text">
+            {% if restaurants %}
+            Choose the restaurant workspace this owner login should manage.
+            {% else %}
+            Create a restaurant workspace first, then come back here to create the owner login.
+            {% endif %}
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-control" id="username" name="username" value="{{ values.get('username', '') }}" placeholder="harbor_owner" required autocomplete="username" maxlength="64">
+        <div class="form-text">Choose the login name the owner will use every day.</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control" id="email" name="email" value="{{ values.get('email', '') }}" type="email" autocomplete="email" placeholder="owner@harborcoffee.com">
+        <div class="form-text">Optional, but helpful for billing, password resets, and account updates.</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" id="password" name="password" type="password" required autocomplete="new-password" minlength="8">
+        <div class="form-text">Use at least 8 characters so your restaurant starts with a solid security baseline.</div>
+    </div>
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit" {% if not restaurants %}disabled{% endif %}>Create Account</button>
+    </div>
+</form>
+
+<div class="mt-4 d-flex flex-column gap-2">
+    <a class="link-secondary" href="/auth/login">Already have an account? Sign in</a>
+    <a class="link-secondary" href="/restaurants/new">Need a workspace first? Create your restaurant</a>
+</div>
+{% endblock %}

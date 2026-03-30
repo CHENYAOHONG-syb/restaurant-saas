@@ -1,0 +1,12 @@
+{% extends "public_layout.html" %}
+
+{% block body %}
+<div class="page-shell py-2 py-md-3">
+    <div class="guest-form-shell card">
+        <div class="card-body p-4 p-lg-5">
+            <span class="guest-form-kicker">{% block form_kicker %}Restaurant access{% endblock %}</span>
+            {% block form_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

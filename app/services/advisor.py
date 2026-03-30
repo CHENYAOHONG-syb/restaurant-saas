@@ -1,4 +1,4 @@
-from services.analytics import (
+from app.services.analytics_service import (
     most_popular_food,
     worst_food,
     peak_hour,

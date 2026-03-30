@@ -1,46 +1,43 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
+{% extends "public_form.html" %}
 
-<h2>Login</h2>
+{% block title %}Sign In to Your Workspace{% endblock %}
+{% block form_kicker %}Step 3 — Sign in{% endblock %}
 
-<input id="username" placeholder="Username"><br><br>
-<input id="password" type="password" placeholder="Password"><br><br>
+{% block top_actions %}
+<a class="btn btn-secondary" href="/">Back Home</a>
+<a class="btn btn-secondary" href="/auth/register">Create Account</a>
+{% endblock %}
 
-<button onclick="login()">Login</button>
+{% block form_content %}
+{% set values = form_data or {} %}
+<div class="mb-4">
+    <h2 class="mb-2">Sign in to your workspace</h2>
+    <p class="text-muted mb-2">Sign in to access your restaurant workspace and keep menus, orders, and daily service moving.</p>
+    <p class="text-muted small mb-0">If your account is already set up, you can be back inside in less than a minute.</p>
+</div>
 
-<script>
-function login() {
-    fetch("/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            username: document.getElementById("username").value,
-            password: document.getElementById("password").value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log(data);
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
 
-        if (data.access_token) {
-            alert("Login success");
+<form method="post" data-loading-label="Signing in...">
+    <div class="mb-3">
+        <label class="form-label" for="username">Username</label>
+        <input class="form-control" id="username" name="username" value="{{ values.get('username', '') }}" placeholder="harbor_owner" required autocomplete="username">
+        <div class="form-text">Use the owner username connected to your restaurant workspace.</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" id="password" name="password" type="password" required autocomplete="current-password">
+        <div class="form-text">Your restaurant workspace opens right after sign in.</div>
+    </div>
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit">Sign In</button>
+    </div>
+</form>
 
-            // ✅ 保存 token（核心）
-            localStorage.setItem("token", data.access_token);
-
-            // 👉 跳转测试页面
-            window.location.href = "/menu_page";
-        } else {
-            alert("Login failed");
-        }
-    });
-}
-</script>
-</body>
-</html>
+<div class="mt-4 d-flex flex-column gap-2">
+    <a class="link-secondary" href="/auth/register">New here? Create your owner account</a>
+    <a class="link-secondary" href="/restaurants/new">Need a workspace first? Create your restaurant</a>
+</div>
+{% endblock %}

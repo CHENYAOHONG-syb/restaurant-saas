@@ -1,0 +1,553 @@
+{% extends "public_layout.html" %}
+{% import "_components.html" as ui %}
+
+{% block title %}Receipt{% if order %} #{{ order.id }}{% endif %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .receipt-shell {
+        max-width: 860px;
+        margin: 0 auto;
+        display: grid;
+        gap: 1rem;
+    }
+
+    .receipt-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .receipt-success-card,
+    .receipt-summary-card,
+    .receipt-notes,
+    .receipt-lines,
+    .receipt-next-steps {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.6rem;
+        background: rgba(255, 253, 249, 0.97);
+        box-shadow: var(--guest-shadow);
+    }
+
+    .receipt-success-card {
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(198, 237, 204, 0.78), transparent 15rem),
+            linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(244, 251, 245, 0.98));
+    }
+
+    .receipt-success-card .card-body,
+    .receipt-summary-card .card-body,
+    .receipt-notes .card-body,
+    .receipt-lines .card-body,
+    .receipt-next-steps .card-body {
+        padding: 1.35rem;
+    }
+
+    .receipt-success-kicker {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #66826d;
+        margin-bottom: 0.55rem;
+        font-weight: 700;
+    }
+
+    .receipt-success-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.4rem 0.78rem;
+        border-radius: 999px;
+        background: rgba(41, 122, 67, 0.12);
+        color: #25623a;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .receipt-confirm-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.9fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .receipt-confirm-title {
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        line-height: 1.05;
+        font-weight: 800;
+        margin-bottom: 0.65rem;
+    }
+
+    .receipt-confirm-copy {
+        color: var(--guest-muted);
+        margin-bottom: 0;
+    }
+
+    .receipt-confirm-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .receipt-confirm-box {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.25rem;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 1rem;
+        display: grid;
+        gap: 0.35rem;
+        align-content: start;
+    }
+
+    .receipt-confirm-box small {
+        color: var(--guest-muted);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+    }
+
+    .receipt-confirm-box strong {
+        font-size: 1.18rem;
+        font-weight: 800;
+    }
+
+    .receipt-confirm-note {
+        margin-top: 1rem;
+        color: var(--guest-muted);
+        font-size: 0.95rem;
+    }
+
+    .receipt-summary-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .receipt-summary-grid {
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .receipt-summary-item {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.15rem;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 0.95rem 1rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .receipt-summary-item small {
+        color: var(--guest-muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+    }
+
+    .receipt-summary-item strong {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    .receipt-meta-copy {
+        color: var(--guest-muted);
+        font-size: 0.92rem;
+        margin-top: 1rem;
+        margin-bottom: 0;
+    }
+
+    .receipt-items th,
+    .receipt-items td {
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .receipt-items td:nth-child(2),
+    .receipt-items td:nth-child(3),
+    .receipt-items td:nth-child(4),
+    .receipt-items th:nth-child(2),
+    .receipt-items th:nth-child(3),
+    .receipt-items th:nth-child(4) {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .receipt-amounts {
+        max-width: 340px;
+        margin-left: auto;
+        margin-top: 1rem;
+    }
+
+    .receipt-amount-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.3rem 0;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .receipt-amount-row:first-child {
+        border-top: 0;
+        padding-top: 0;
+    }
+
+    .receipt-amount-label {
+        color: #6c757d;
+    }
+
+    .receipt-amount-row.total {
+        margin-top: 0.35rem;
+        padding-top: 0.75rem;
+        border-top: 2px solid #adb5bd;
+        font-weight: 700;
+    }
+
+    .receipt-total {
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .receipt-next-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .receipt-footer {
+        border-top: 1px dashed #ced4da;
+        margin-top: 0.5rem;
+        padding-top: 1rem;
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    @media print {
+        @page {
+            size: auto;
+            margin: 10mm;
+        }
+
+        body {
+            background: #fff !important;
+            color: #000;
+            font-size: 12px;
+        }
+
+        nav,
+        .receipt-toolbar,
+        .receipt-next-actions,
+        .alert,
+        .btn,
+        .screen-only {
+            display: none !important;
+        }
+
+        main.public-main {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .public-shell {
+            max-width: none !important;
+        }
+
+        .receipt-shell,
+        .card,
+        .card-body,
+        .table-responsive {
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+
+        .receipt-success-card,
+        .receipt-summary-card,
+        .receipt-notes,
+        .receipt-lines,
+        .receipt-next-steps {
+            border: 0 !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .receipt-confirm-grid,
+        .receipt-summary-grid,
+        .receipt-next-actions {
+            display: block !important;
+        }
+
+        .receipt-confirm-box,
+        .receipt-summary-item {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 0.5rem;
+            border: 1px solid #999 !important;
+            background: transparent !important;
+        }
+
+        .receipt-success-card,
+        .receipt-summary-card,
+        .receipt-notes,
+        .receipt-lines {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .status-pill,
+        .badge {
+            color: #000 !important;
+            background: transparent !important;
+            border: 1px solid #999 !important;
+        }
+
+        .table {
+            width: 100% !important;
+            margin-bottom: 0 !important;
+        }
+
+        .table th,
+        .table td {
+            background: transparent !important;
+            border-color: #999 !important;
+            padding: 0.3rem !important;
+        }
+
+        .receipt-amounts {
+            max-width: none;
+            width: 100%;
+            margin-left: 0;
+        }
+
+        .text-muted,
+        .receipt-footer,
+        .receipt-meta-copy,
+        .receipt-confirm-copy,
+        .receipt-confirm-note {
+            color: #444 !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .receipt-confirm-grid,
+        .receipt-summary-head {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+
+        .receipt-confirm-box,
+        .receipt-summary-item {
+            padding: 0.9rem;
+        }
+
+        .receipt-next-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block top_actions %}
+<a class="btn btn-secondary" href="{{ detail_url if detail_url else '/' }}">Back to Order</a>
+{% if order and restaurant_id %}
+<a class="btn btn-primary" href="/admin/orders/{{ restaurant_id }}">View Orders</a>
+{% endif %}
+<button class="btn btn-secondary" type="button" onclick="window.print()">Print This Page</button>
+{% endblock %}
+
+{% block body %}
+<div class="receipt-shell">
+    <div class="receipt-toolbar screen-only">
+        <div>
+            <h2 class="h4 mb-1">Order Receipt</h2>
+            <p class="text-muted mb-0">Use your browser print dialog for paper receipts.</p>
+        </div>
+    </div>
+
+    <section class="receipt-success-card card border-0">
+        <div class="card-body">
+            <div class="receipt-success-kicker">Restaurant Admin Receipt</div>
+            <span class="receipt-success-pill">Order confirmed</span>
+            <div class="receipt-confirm-grid">
+                <div>
+                    <h1 class="receipt-confirm-title">Order Confirmed</h1>
+                    <p class="receipt-confirm-copy">Your order has been sent to the kitchen.</p>
+                    <div class="receipt-confirm-facts">
+                        <span class="guest-chip"><strong>Order #{{ order.id if order else '-' }}</strong></span>
+                        <span class="guest-chip">{% if order and order.table_number %}Table {{ order.table_number }}{% else %}Takeaway{% endif %}</span>
+                        <span class="guest-chip">{{ status_label if status_label else (order.status|title if order and order.status else "Unknown") }}</span>
+                    </div>
+                    <p class="receipt-confirm-note">
+                        {% if order and order.table_number %}
+                        We&apos;ll prepare this for table {{ order.table_number }}. Keep this page open if you want to review your order.
+                        {% else %}
+                        The restaurant team has received your takeaway order. Keep this page open if you want to review your order.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="receipt-confirm-box">
+                    <small>Next step</small>
+                    <strong>The kitchen team will prepare this order now.</strong>
+                    <small>{% if order and order.table_number %}You can simply wait for service at your table.{% else %}Please wait while the restaurant team prepares your order.{% endif %}</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="receipt-summary-card card border-0 receipt-meta">
+        <div class="card-body">
+            <div class="receipt-summary-head">
+                <div>
+                    <h2 class="h5 mb-1">Order summary</h2>
+                    <p class="text-muted mb-0">A quick view of the key details for this completed order.</p>
+                </div>
+            </div>
+
+            <div class="receipt-summary-grid">
+                <div class="receipt-summary-item">
+                    <small>Table</small>
+                    <strong>{% if order and order.table_number %}Table {{ order.table_number }}{% else %}Takeaway{% endif %}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Order Number</small>
+                    <strong>#{{ order.id if order else '-' }}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Created</small>
+                    <strong>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order and order.created_at else 'Created time unavailable' }}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Order Source</small>
+                    <strong><span class="badge text-bg-secondary">{{ source_context.label if source_context else "Unknown" }}</span></strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Payment Status</small>
+                    <strong><span class="badge {% if payment_status == 'Paid' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ payment_status }}</span></strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Payment Method</small>
+                    <strong>{{ payment_method }}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Paid At</small>
+                    <strong>{% if paid_at %}{{ paid_at.strftime('%Y-%m-%d %H:%M') }}{% else %}&mdash;{% endif %}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Customer</small>
+                    <strong>{{ customer_label or "Walk-in guest" }}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Dining mode</small>
+                    <strong>{% if order and order.table_number %}Dine-in{% else %}Takeaway{% endif %}</strong>
+                </div>
+                <div class="receipt-summary-item">
+                    <small>Status</small>
+                    <strong>{{ status_label if status_label else (order.status|title if order and order.status else "Unknown") }}</strong>
+                </div>
+            </div>
+
+            {% if source_context and source_context.summary %}
+            <p class="receipt-meta-copy">{{ source_context.summary }}</p>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if note_context and note_context.has_note %}
+    <section class="receipt-notes card border-0">
+        <div class="card-body">
+            <h2 class="h5 mb-2">Kitchen note</h2>
+            <p class="mb-0">{{ note_context.text }}</p>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="receipt-lines card border-0">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h2 class="h5 mb-1">Line Items</h2>
+                    <p class="text-muted mb-0">Everything included in the order that has been sent for preparation.</p>
+                </div>
+            </div>
+
+            {% if items %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle mb-0 receipt-items">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ currency }} {{ '%.2f'|format(item.unit_price) }}</td>
+                            <td>{{ currency }} {{ '%.2f'|format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="receipt-amounts">
+                <div class="receipt-amount-row">
+                    <span class="receipt-amount-label">Items Total (Subtotal)</span>
+                    <span>{{ currency }} {{ '%.2f'|format(subtotal) }}</span>
+                </div>
+                <div class="receipt-amount-row total">
+                    <span>Total</span>
+                    <span class="receipt-total">{{ currency }} {{ '%.2f'|format(total) }}</span>
+                </div>
+            </div>
+            {% else %}
+            {{ ui.empty_state("No items found", "This receipt does not currently have any order lines attached.") }}
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="receipt-next-steps card border-0 screen-only">
+        <div class="card-body">
+            <h2 class="h5 mb-2">What happens next</h2>
+            <p class="text-muted mb-0">
+                {% if order and order.table_number %}
+                The restaurant team will prepare this for table {{ order.table_number }}. Keep this page if you want to review the order or print the receipt.
+                {% else %}
+                The restaurant team will prepare this order shortly. Keep this page if you want to review the order or print the receipt.
+                {% endif %}
+            </p>
+            <div class="receipt-next-actions">
+                <a class="btn btn-secondary" href="{{ detail_url if detail_url else '/' }}">Back to Order</a>
+                <button class="btn btn-primary" type="button" onclick="window.print()">Print This Page</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="receipt-footer">
+        <p class="mb-1">Thank you for choosing {{ restaurant.name if restaurant else "our restaurant" }}.</p>
+        <p class="mb-0">Printed from the restaurant admin panel.</p>
+    </div>
+</div>
+{% endblock %}

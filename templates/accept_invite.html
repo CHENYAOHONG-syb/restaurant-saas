@@ -1,0 +1,47 @@
+{% extends "public_form.html" %}
+
+{% block title %}Accept Invitation{% endblock %}
+
+{% block top_actions %}
+<a class="btn btn-secondary" href="/auth/login">Back to Sign In</a>
+{% endblock %}
+
+{% block form_content %}
+<div class="mb-4">
+    <h2 class="mb-1">Accept invitation</h2>
+    <p class="text-muted mb-0">Set your account details and activate access to the restaurant workspace.</p>
+</div>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
+
+{% if invitation %}
+<div class="card bg-light border mb-4">
+    <div class="card-body">
+        <h3 class="h5">Invitation details</h3>
+        <ul class="mb-0">
+            <li>Email: {{ invitation.email }}</li>
+            <li>Role: {{ role_label }}</li>
+            <li>Restaurant ID: {{ invitation.restaurant_id }}</li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<form method="post" data-loading-label="Creating access...">
+    <div class="mb-3">
+        <label class="form-label" for="invite-username">Username</label>
+        <input class="form-control" id="invite-username" name="username" value="{{ form_data.username if form_data else '' }}" required>
+        <div class="form-text">This username will be used to sign in after the invitation is accepted.</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="invite-password">Password</label>
+        <input class="form-control" id="invite-password" type="password" name="password" minlength="8" required>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <a class="btn btn-secondary" href="/auth/login">Already have an account?</a>
+        <button class="btn btn-primary" type="submit">Accept Invitation</button>
+    </div>
+</form>
+{% endblock %}

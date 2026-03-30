@@ -1,22 +1,240 @@
-<!DOCTYPE html>
-<html>
+{% extends "public_form.html" %}
 
-<head>
-<title>Create Restaurant</title>
-</head>
+{% block title %}Create Restaurant Workspace{% endblock %}
+{% block form_kicker %}Step 1 — Create your restaurant{% endblock %}
 
-<body>
+{% block top_actions %}
+<a class="btn btn-secondary" href="/">Back Home</a>
+<a class="btn btn-secondary" href="/auth/login">Sign In</a>
+{% endblock %}
 
-<h1>Create Your Restaurant</h1>
+{% block extra_styles %}
+<style>
+    .onboarding-step {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: var(--guest-accent-soft);
+        color: var(--guest-accent-strong);
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
 
-<form method="POST">
+    .onboarding-grid {
+        display: grid;
+        gap: 1.25rem;
+    }
 
-<input type="text" name="name" placeholder="Restaurant Name">
+    .onboarding-panel {
+        border: 1px solid var(--guest-line);
+        border-radius: 1.2rem;
+        background: rgba(255, 255, 255, 0.7);
+        padding: 1.1rem 1.15rem;
+    }
 
-<button>Create</button>
+    .onboarding-panel h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+    }
 
-</form>
+    .onboarding-panel p:last-child,
+    .onboarding-panel ul:last-child {
+        margin-bottom: 0;
+    }
 
-</body>
+    .workspace-preview {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--guest-line);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.86);
+        font-size: 0.96rem;
+    }
 
-</html>
+    .workspace-preview-domain {
+        color: var(--guest-muted);
+    }
+
+    .workspace-preview-slug {
+        color: var(--guest-text);
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    .onboarding-benefits {
+        display: grid;
+        gap: 0.8rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    .onboarding-benefits li {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .onboarding-benefits-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        background: rgba(209, 111, 63, 0.12);
+        color: var(--guest-accent-strong);
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .onboarding-summary {
+        color: var(--guest-muted);
+        font-size: 0.95rem;
+    }
+
+    .onboarding-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.9rem;
+        margin-top: 1.5rem;
+    }
+
+    .onboarding-actions .btn-primary {
+        min-width: 14rem;
+    }
+
+    @media (min-width: 992px) {
+        .onboarding-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+            align-items: start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block form_content %}
+{% set values = form_data or {} %}
+<div class="mb-4">
+    <h2 class="mb-2">Create your restaurant workspace</h2>
+    <p class="text-muted mb-2">Set up your restaurant to start menus, guest QR ordering, and live daily operations. This is the first step and takes less than a minute.</p>
+    <p class="text-muted small mb-0">After this, you will create the first owner account for the workspace.</p>
+</div>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
+
+<div class="onboarding-grid">
+    <div>
+        <div class="onboarding-panel mb-3">
+            <h3>What you will unlock next</h3>
+            <p class="text-muted">After this step, you can add menus, set up tables, and switch on live guest ordering for your team.</p>
+        </div>
+
+        <form method="post" data-loading-label="Creating workspace...">
+            <div class="mb-3">
+                <label class="form-label" for="name">Restaurant name</label>
+                <input class="form-control" id="name" name="name" value="{{ values.get('name', '') }}" placeholder="Harbor Coffee House" required autofocus>
+                <div class="form-text">Use the name your staff and guests will recognise right away.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="workspace-link-preview">Restaurant link</label>
+                <div class="workspace-preview" id="workspace-link-preview" aria-live="polite">
+                    <span class="workspace-preview-domain">your-menu.com/r/</span>
+                    <span class="workspace-preview-slug" id="workspace-link-slug">harbor-coffee-house</span>
+                </div>
+                <div class="form-text">This becomes part of your restaurant link. We create the first version from your restaurant name using lowercase letters, numbers, and hyphens.</div>
+                <input type="hidden" name="slug" id="slug" value="">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="address">Restaurant address <span class="text-muted fw-normal">(optional)</span></label>
+                <input class="form-control" id="address" name="address" value="{{ values.get('address', '') }}" placeholder="12 Jalan Sultan, Kuala Lumpur">
+                <div class="form-text">Add this now if you want location details ready inside your workspace.</div>
+            </div>
+
+            <div class="onboarding-actions">
+                <div class="onboarding-summary">Next you will create the owner account for this workspace.</div>
+                <div class="d-flex flex-wrap justify-content-end gap-2">
+                    <a class="btn btn-secondary" href="/">Back Home</a>
+                    <button class="btn btn-primary" type="submit">Create Workspace</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="onboarding-panel">
+        <h3>What you get right away</h3>
+        <ul class="onboarding-benefits">
+            <li>
+                <span class="onboarding-benefits-badge">1</span>
+                <div>
+                    <div class="fw-semibold">Your restaurant admin workspace</div>
+                    <div class="text-muted small">A home base for menus, orders, tables, and staff operations.</div>
+                </div>
+            </li>
+            <li>
+                <span class="onboarding-benefits-badge">2</span>
+                <div>
+                    <div class="fw-semibold">A guest menu link</div>
+                    <div class="text-muted small">A shareable link you can use for QR ordering and table-side service.</div>
+                </div>
+            </li>
+            <li>
+                <span class="onboarding-benefits-badge">3</span>
+                <div>
+                    <div class="fw-semibold">Menu and table setup next</div>
+                    <div class="text-muted small">Keep onboarding simple now, then finish your operational setup step by step.</div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="mt-4 d-flex flex-column gap-2">
+    <a class="link-secondary" href="/auth/register">Already have a workspace? Create the owner account</a>
+    <a class="link-secondary" href="/auth/login">Already set up? Sign in to your workspace</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    (() => {
+        const nameInput = document.getElementById("name");
+        const slugField = document.getElementById("slug");
+        const slugPreview = document.getElementById("workspace-link-slug");
+        if (!nameInput || !slugField || !slugPreview) {
+            return;
+        }
+
+        const slugify = (value) => {
+            const normalized = (value || "")
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+            return normalized || "your-restaurant";
+        };
+
+        const updatePreview = () => {
+            const slug = slugify(nameInput.value);
+            slugField.value = slug;
+            slugPreview.textContent = slug;
+        };
+
+        nameInput.addEventListener("input", updatePreview);
+        updatePreview();
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% macro metric_card(title, value, description='') -%}
+<div class="card shadow-sm h-100 metric-surface">
+    <div class="card-body">
+        <div class="text-uppercase text-muted small fw-semibold mb-2">{{ title }}</div>
+        <div class="fs-3 fw-semibold text-dark-emphasis">{{ value }}</div>
+        {% if description %}
+        <p class="text-muted mb-0 mt-2">{{ description }}</p>
+        {% endif %}
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro metric_link_card(title, value, description, href) -%}
+<a class="text-decoration-none text-reset d-block" href="{{ href }}">
+    <div class="card shadow-sm h-100 metric-surface metric-link-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="text-uppercase text-muted small fw-semibold mb-2">{{ title }}</div>
+                    <div class="fs-3 fw-semibold text-dark-emphasis">{{ value }}</div>
+                    {% if description %}
+                    <p class="text-muted mb-0 mt-2">{{ description }}</p>
+                    {% endif %}
+                </div>
+                <span class="text-muted small fw-semibold">View</span>
+            </div>
+        </div>
+    </div>
+</a>
+{%- endmacro %}
+
+{% macro empty_state(title, description) -%}
+<div class="card shadow-sm empty-state-card">
+    <div class="card-body text-center py-5">
+        <div class="text-uppercase text-muted small fw-semibold mb-2">Nothing to review</div>
+        <h3 class="h5 mb-2">{{ title }}</h3>
+        <p class="text-muted mb-0">{{ description }}</p>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro status_badge(text, css_class='secondary') -%}
+<span class="status-pill {{ css_class }}">{{ text }}</span>
+{%- endmacro %}
+
+{% macro order_status_badge(status, label=None) -%}
+{{ status_badge(label or status|replace('_', ' ')|title, status) }}
+{%- endmacro %}
+
+{% macro payment_status_badge(label, css_class='secondary') -%}
+{{ status_badge(label, css_class) }}
+{%- endmacro %}
+
+{% macro source_badge(label, css_class='secondary') -%}
+{{ status_badge(label, css_class) }}
+{%- endmacro %}
+
+{% macro order_action_buttons(restaurant_id, order_id, actions, return_fields, action_endpoint='admin.update_order', empty_label='No actions available', action_labels=None) -%}
+{% if actions %}
+<div class="d-flex flex-wrap gap-2">
+    {% for status in actions %}
+    <form action="{{ url_for(action_endpoint, restaurant_id=restaurant_id, order_id=order_id) }}" method="post" data-loading-label="Saving...">
+        {{ hidden_fields(return_fields) }}
+        <input type="hidden" name="status" value="{{ status }}">
+        <button class="btn btn-primary btn-sm" type="submit">{{ action_labels.get(status, status|replace('_', ' ')|title) if action_labels else status|replace('_', ' ')|title }}</button>
+    </form>
+    {% endfor %}
+</div>
+{% else %}
+<span class="text-muted small">{{ empty_label }}</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro hidden_fields(fields) -%}
+{% for field in fields %}
+<input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+{% endfor %}
+{%- endmacro %}
+
+{% macro list_toolbar(state) -%}
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form class="row g-2" method="get" action="{{ state.action_url }}">
+            {{ hidden_fields(state.hidden_fields) }}
+            <div class="col-lg-4">
+                <label class="visually-hidden" for="{{ state.id_prefix }}-search">Search</label>
+                <input
+                    class="form-control"
+                    id="{{ state.id_prefix }}-search"
+                    type="search"
+                    name="{{ state.search_name }}"
+                    value="{{ state.search_value }}"
+                    placeholder="{{ state.search_placeholder }}"
+                >
+            </div>
+            {% for filter in state.filters %}
+            <div class="col-md-2">
+                <label class="visually-hidden" for="{{ state.id_prefix }}-{{ filter.name }}">{{ filter.label }}</label>
+                <select class="form-select" id="{{ state.id_prefix }}-{{ filter.name }}" name="{{ filter.name }}">
+                    {% for option in filter.options %}
+                    <option value="{{ option.value }}" {% if filter.value == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+            <div class="col-md-2">
+                <label class="visually-hidden" for="{{ state.id_prefix }}-sort">Sort</label>
+                <select class="form-select" id="{{ state.id_prefix }}-sort" name="{{ state.sort_name }}">
+                    {% for option in state.sort_options %}
+                    <option value="{{ option.value }}" {% if state.sort_value == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="visually-hidden" for="{{ state.id_prefix }}-dir">Direction</label>
+                <select class="form-select" id="{{ state.id_prefix }}-dir" name="{{ state.direction_name }}">
+                    {% for option in state.direction_options %}
+                    <option value="{{ option.value }}" {% if state.direction_value == option.value %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-auto ms-lg-auto">
+                <div class="d-flex gap-2 justify-content-lg-end">
+                    <a class="btn btn-secondary" href="{{ state.reset_url }}">Reset</a>
+                    <button class="btn btn-primary" type="submit">Apply</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro pagination_nav(pagination) -%}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mt-3">
+    <small class="text-muted">
+        {% if pagination.total %}
+        Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}
+        {% else %}
+        No results
+        {% endif %}
+    </small>
+    <nav aria-label="Pagination">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item {% if not pagination.prev_url %}disabled{% endif %}">
+                <a class="page-link" href="{{ pagination.prev_url or '#' }}">Previous</a>
+            </li>
+            {% for page_link in pagination.page_links %}
+            <li class="page-item {% if page_link.active %}active{% endif %}">
+                <a class="page-link" href="{{ page_link.url }}">{{ page_link.number }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if not pagination.next_url %}disabled{% endif %}">
+                <a class="page-link" href="{{ pagination.next_url or '#' }}">Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{%- endmacro %}
+
+{% macro pagination_controls() -%}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <small class="text-muted" data-pagination-status>Showing 0 of 0</small>
+    <div class="btn-group" role="group" aria-label="Table pagination">
+        <button class="btn btn-secondary btn-sm" type="button" data-pagination-prev>Previous</button>
+        <button class="btn btn-secondary btn-sm" type="button" data-pagination-next>Next</button>
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro client_search_toolbar(target_id, search_placeholder, empty_title, empty_description, page_size=10) -%}
+<div class="row g-2 mb-3" data-filter-group data-target="#{{ target_id }}" data-page-size="{{ page_size }}">
+    <div class="col-md-8">
+        <input class="form-control" type="search" placeholder="{{ search_placeholder }}" data-table-search>
+    </div>
+    <div class="col-md-4">
+        {{ pagination_controls() }}
+    </div>
+    <div class="col-12 d-none" data-filter-empty>
+        {{ empty_state(empty_title, empty_description) }}
+    </div>
+</div>
+{%- endmacro %}

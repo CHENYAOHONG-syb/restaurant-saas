@@ -1,35 +1,158 @@
-<h1>Staff Management</h1>
+{% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
 
-<h2>Add Staff</h2>
+{% block page_title %}Team & Roles{% endblock %}
+{% block page_description %}Invite staff members, update roles, and keep workspace permissions organized in one admin page.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="/dashboard/{{ restaurant_id }}">Back</a>
+<a class="btn btn-secondary" href="/billing/{{ restaurant_id }}">Plans & Billing</a>
+{% if restaurant %}
+<a class="btn btn-primary" href="/menu/r/{{ restaurant.slug }}?table=1">Open Guest Menu</a>
+{% endif %}
+{% endblock %}
 
-<form action="/add_staff" method="POST">
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Invite team member</h2>
+                <p class="text-muted mb-4">Create an invitation link for a manager, cashier, staff, or kitchen user.</p>
+                <form action="/admin/team/{{ restaurant_id }}/invite" method="post" data-loading-label="Creating invitation...">
+                    {{ ui.hidden_fields(team_return_fields) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="invite-email">Email</label>
+                        <input class="form-control" id="invite-email" type="email" name="email" placeholder="manager@restaurant.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="invite-role">Role</label>
+                        <select class="form-select" id="invite-role" name="role" required>
+                            {% for role_key, role_label in role_labels.items() %}
+                                {% if role_key != 'owner' %}
+                                <option value="{{ role_key }}">{{ role_label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit">Send Invitation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
-
-<input name="name" placeholder="Staff name">
-
-<select name="role">
-
-<option value="manager">Manager</option>
-<option value="cashier">Cashier</option>
-<option value="kitchen">Kitchen</option>
-
-</select>
-
-<button>Add</button>
-
-</form>
-
-<hr>
-
-<h2>Staff List</h2>
-
-{% for w in workers %}
-
-<div>
-
-{{w.name}} - {{w.role}}
-
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Permission summary</h2>
+                <p class="text-muted mb-3">Use these roles to control access without giving billing permissions to everyone.</p>
+                <ul class="mb-0">
+                    <li>Owners can manage billing, team access, and all admin pages.</li>
+                    <li>Managers can focus on service, menus, and operations pages.</li>
+                    <li>Cashiers, service staff, and kitchen users get limited daily-use access.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% endfor %}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h4 mb-1">Active team members</h2>
+        <p class="text-muted mb-3">Review accounts and update roles from one table.</p>
+        {{ ui.list_toolbar(members_state) }}
+        {% if members %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle mb-0" id="membersTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Current Role</th>
+                        <th>Update Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>{{ member.username }}</td>
+                        <td>{{ member.email or 'No email on file' }}</td>
+                        <td>{{ role_labels.get(member.role, member.role|title) }}</td>
+                        <td>
+                            {% if member.id == current_user.id %}
+                            <span class="text-muted">Current account</span>
+                            {% else %}
+                            <form class="d-flex gap-2" action="/admin/team/{{ restaurant_id }}/members/{{ member.id }}/role" method="post" data-loading-label="Saving role...">
+                                {{ ui.hidden_fields(team_return_fields) }}
+                                <select class="form-select form-select-sm" name="role" aria-label="Role for {{ member.username }}">
+                                    {% for role_key, role_label in role_labels.items() %}
+                                    <option value="{{ role_key }}" {% if member.role == role_key %}selected{% endif %}>{{ role_label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ ui.pagination_nav(members_state.pagination) }}
+        {% else %}
+        {{ ui.empty_state("No matching team members", "Try a different search or role filter.") }}
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h4 mb-1">Pending invitations</h2>
+        <p class="text-muted mb-3">Copy acceptance links or revoke unused invitations.</p>
+        {{ ui.list_toolbar(invitations_state) }}
+        {% if invitations %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle mb-0" id="invitationsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Acceptance Link</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invitation in invitations %}
+                    <tr>
+                        <td>{{ invitation.email }}</td>
+                        <td>{{ role_labels.get(invitation.role, invitation.role|title) }}</td>
+                        <td>{{ invitation.status|title }}</td>
+                        <td>{{ invitation.expires_at.strftime('%Y-%m-%d %H:%M') if invitation.expires_at else 'Soon' }}</td>
+                        <td>
+                            <a href="{{ url_for('auth.accept_invite', token=invitation.token) }}">{{ url_for('auth.accept_invite', token=invitation.token) }}</a>
+                        </td>
+                        <td>
+                            {% if invitation.status == 'pending' %}
+                            <form action="/admin/team/{{ restaurant_id }}/invites/{{ invitation.id }}/revoke" method="post" class="d-inline" data-loading-label="Revoking...">
+                                {{ ui.hidden_fields(team_return_fields) }}
+                                <button class="btn btn-danger btn-sm" type="submit">Revoke</button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">No action</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ ui.pagination_nav(invitations_state.pagination) }}
+        {% else %}
+        {{ ui.empty_state("No matching invitations", "Try a different search or status filter.") }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,182 +1,331 @@
-<!DOCTYPE html>
-<html>
+{% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
 
-<head>
+{% block page_title %}Owner Overview{% endblock %}
+{% block page_description %}Run service from one console and move straight to the next decision without losing context.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="/admin/menu/{{ restaurant_id }}">Open Menu Studio</a>
+<a class="btn btn-primary" href="{{ menu_link }}">Launch Guest View</a>
+{% endblock %}
 
-<title>Restaurant Dashboard</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+{% block extra_styles %}
 <style>
+    .service-status-card {
+        border-width: 1px;
+        border-left-width: 6px;
+        border-radius: 1.35rem;
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 0.98));
+        box-shadow: 0 20px 46px rgba(15, 23, 42, 0.08);
+    }
 
-body{
-font-family:Arial;
-background:#f5f5f5;
-padding:20px;
-}
+    .service-status-card.success { border-left-color: #198754; }
+    .service-status-card.warning { border-left-color: #f59e0b; }
+    .service-status-card.danger { border-left-color: #dc3545; }
 
-.card{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:10px;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
+    .service-status-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
 
+    .service-status-title {
+        font-size: clamp(2rem, 4vw, 2.75rem);
+        line-height: 1.05;
+        margin-bottom: 0;
+    }
+
+    .service-status-subtitle {
+        font-size: 1rem;
+        max-width: 40rem;
+    }
+
+    .service-status-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .service-status-facts span {
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .decision-card {
+        border-radius: 1.25rem;
+    }
+
+    .decision-card .card-body {
+        padding: 1.4rem;
+    }
+
+    .insight-list,
+    .attention-list,
+    .trend-list,
+    .activity-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .insight-item,
+    .attention-item,
+    .trend-item,
+    .activity-item {
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.95rem 1rem;
+    }
+
+    .attention-item,
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 1rem;
+    }
+
+    .attention-item {
+        border-left: 4px solid transparent;
+    }
+
+    .attention-item.priority-urgent {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+    }
+
+    .attention-item.priority-attention {
+        border-left-color: #f59e0b;
+        background: #fffaf0;
+    }
+
+    .attention-item.priority-monitor {
+        border-left-color: #198754;
+    }
+
+    .insight-item {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .insight-marker {
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 999px;
+        background: #0f172a;
+        flex: 0 0 auto;
+    }
+
+    .attention-item .attention-cta-urgent {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .attention-item .attention-cta-monitor {
+        background: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .trend-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+    }
+
+    .activity-headline {
+        font-weight: 600;
+    }
+
+    .feed-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .feed-link:hover .activity-item {
+        border-color: #cbd5e1;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+    }
+
+    .metric-row {
+        margin-top: 0.25rem;
+    }
 </style>
+{% endblock %}
 
-</head>
-
-<body>
-
-<h1>Restaurant Dashboard</h1>
-
-<a href="/admin/menu/{{restaurant_id}}">Manage Menu</a>
-
-<a href="/admin/orders/{{restaurant_id}}">Orders</a>
-
-<a href="/admin/inventory/{{restaurant_id}}">Inventory</a>
-
-<a href="/orders/kitchen/{{restaurant_id}}">Kitchen Screen</a>
-<div class="card">
-<h2>Total Orders: {{total_orders}}</h2>
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm service-status-card {{ service_status.tone }}">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                    <div>
+                        <div class="service-status-label mb-2">Service Status</div>
+                        <h2 class="service-status-title">{{ service_status.title }}</h2>
+                        <div class="service-status-subtitle text-muted mt-2">{{ service_status.subtitle }}</div>
+                        {% if service_status.facts %}
+                        <div class="service-status-facts mt-3">
+                            {% for fact in service_status.facts %}
+                            <span>{{ fact }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if service_status.href %}
+                    <a class="btn btn-primary btn-lg" href="{{ service_status.href }}">{{ service_status.action_label }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-<h2>Total Sales: RM {{total_sales}}</h2>
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100 decision-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <h2 class="h4 mb-0">Today Insights</h2>
+                    <div class="text-end text-muted small">
+                        <div>{{ today_metrics.today_orders }} orders</div>
+                        <div>{{ today_metrics.today_revenue_display }}</div>
+                    </div>
+                </div>
+                <div class="insight-list">
+                    {% for insight in today_insights %}
+                    <div class="insight-item">
+                        <span class="insight-marker"></span>
+                        <div class="fw-semibold">{{ insight.title }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card shadow-sm h-100 decision-card">
+            <div class="card-body">
+                <h2 class="h4 mb-0">Needs Attention</h2>
+
+                {% if needs_attention %}
+                <div class="attention-list mt-3">
+                    {% for item in needs_attention %}
+                    <div class="attention-item priority-{{ item.priority_label|lower }}">
+                        <div class="flex-grow-1">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                {{ ui.status_badge(item.priority_label, item.priority_class) }}
+                                <span class="fw-semibold">{{ item.count }} {{ item.title|lower }}</span>
+                            </div>
+                            <div class="text-muted small">{{ item.detail }}</div>
+                        </div>
+                        <a class="btn btn-sm {% if item.priority_label == 'Urgent' %}btn-danger attention-cta-urgent{% elif item.priority_label == 'Monitor' %}btn-secondary attention-cta-monitor{% else %}btn-primary{% endif %}" href="{{ item.href }}">{{ item.action_label }}</a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="card border-0 bg-light-subtle mt-3">
+                    <div class="card-body text-center py-5">
+                        <h3 class="h5">Nothing urgent right now</h3>
+                        <p class="text-muted mb-3">The floor, kitchen, stock, and tables are all under control.</p>
+                        <a class="btn btn-secondary" href="{{ dashboard_order_links.active_orders }}">View live orders</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card">
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100 decision-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <h2 class="h4 mb-0">Today vs Yesterday</h2>
+                    <a class="btn btn-secondary btn-sm" href="{{ dashboard_today_links.today_orders }}">View today</a>
+                </div>
+                <div class="trend-list">
+                    {% for trend in today_comparison %}
+                    <div class="trend-item">
+                        <div class="trend-line">
+                            <div>
+                                <div class="fw-semibold">{{ trend.label }}</div>
+                                <div class="text-muted small">Yesterday: {{ trend.yesterday_display }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-semibold">{{ trend.today_display }}</div>
+                                <div class="text-muted small">{{ trend.summary }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 
-<h2>Orders Per Day</h2>
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100 decision-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                    <h2 class="h4 mb-0">Latest Activity</h2>
+                    <a class="btn btn-secondary btn-sm" href="{{ dashboard_order_links.total_orders }}">View all orders</a>
+                </div>
 
-<canvas id="salesChart"></canvas>
-
+                {% if activity_feed %}
+                <div class="activity-feed">
+                    {% for item in activity_feed %}
+                    <a class="feed-link" href="{{ item.href }}">
+                        <div class="activity-item">
+                            <div class="flex-grow-1">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <span class="activity-headline">{{ item.headline }}</span>
+                                    {{ ui.status_badge(item.badge_label, item.badge_class) }}
+                                </div>
+                            </div>
+                            <div class="text-end text-muted small text-nowrap">{{ item.time_ago }}</div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="card border-0 bg-light-subtle">
+                    <div class="card-body py-5 text-center">
+                        <h3 class="h5">No orders yet</h3>
+                        <p class="text-muted mb-3">Start by creating your first order or sharing your menu QR code with customers.</p>
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <a class="btn btn-secondary" href="/admin/menu/{{ restaurant_id }}">Go to Menu</a>
+                            <a class="btn btn-primary" href="{{ menu_link }}">Launch Guest View</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-
-<h2>Top Foods</h2>
-
-<canvas id="foodChart"></canvas>
-
+<div class="row g-4">
+    <div class="col-md-6 col-xl-3">
+        {{ ui.metric_link_card("Active Orders", order_metrics.active_orders, "", dashboard_order_links.active_orders) }}
+    </div>
+    <div class="col-md-6 col-xl-3">
+        {{ ui.metric_link_card("Unpaid Orders", order_metrics.unpaid_orders, "", dashboard_order_links.unpaid_orders) }}
+    </div>
+    <div class="col-md-6 col-xl-3">
+        {{ ui.metric_link_card("Low Stock Items", inventory_metrics.low_stock_count, "", dashboard_inventory_links.low_stock) }}
+    </div>
+    <div class="col-md-6 col-xl-3">
+        {{ ui.metric_link_card("Needs Cleaning Tables", table_metrics.needs_cleaning_tables, "", dashboard_table_links.needs_cleaning_tables) }}
+    </div>
 </div>
-
-<script>
-
-fetch("/api/sales/1")
-
-.then(res => res.json())
-
-.then(data => {
-
-const labels = data.map(d => d.day)
-const values = data.map(d => d.orders)
-
-new Chart(document.getElementById("salesChart"), {
-
-type: "line",
-
-data: {
-
-labels: labels,
-
-datasets: [{
-label: "Orders",
-data: values
-}]
-
-}
-
-})
-
-})
-
-</script>
-
-<script>
-
-fetch("/api/top_food/1")
-
-.then(res => res.json())
-
-.then(data => {
-
-const labels = data.map(d => d.name)
-const values = data.map(d => d.total)
-
-new Chart(document.getElementById("foodChart"), {
-
-type: "bar",
-
-data: {
-
-labels: labels,
-
-datasets: [{
-label: "Top Foods",
-data: values
-}]
-
-}
-
-})
-
-})
-
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<h2>Sales Chart</h2>
-
-<canvas id="salesChart"></canvas>
-
-<script>
-
-const data = {
-labels: {{hours|tojson}},
-datasets: [{
-label: 'Orders',
-data: {{counts|tojson}},
-borderWidth: 2
-}]
-};
-
-new Chart(
-document.getElementById('salesChart'),
-{
-type: 'line',
-data: data
-}
-);
-
-<h2>AI Insights</h2>
-
-<div>
-
-<p>🔥 Most Popular: {{popular.name}}</p>
-
-<p>⚠ Worst Selling: {{worst.name}}</p>
-
-<p>⏰ Peak Hour: {{peak.hour}}:00</p>
-
-<p>💰 Avg Order: RM {{avg.avg_value}}</p>
-
-</div>
-<h2>Smart Advisor</h2>
-
-<ul>
-
-{% for a in advice %}
-
-<li>{{a}}</li>
-
-{% endfor %}
-
-</ul>
-
-</script>
-
-</body>
-</html>
+{% endblock %}

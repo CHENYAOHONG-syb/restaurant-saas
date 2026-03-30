@@ -1,0 +1,116 @@
+{% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
+
+{% block page_title %}Billing Health{% endblock %}
+{% block page_description %}Monitor failed payments, pending cancellations, and subscription health from one owner-facing support view.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="/billing/{{ restaurant_id }}">Plans & Billing</a>
+<a class="btn btn-secondary" href="/billing/{{ restaurant_id }}/history">Billing History</a>
+{% if subscription.billing_provider == 'stripe' and subscription.provider_customer_id %}
+<form action="/billing/{{ restaurant_id }}/portal" method="post" data-loading-label="Opening billing portal...">
+    <button class="btn btn-secondary" type="submit">Open Stripe Portal</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        {{ ui.metric_card("Subscription status", subscription.status|replace('_', ' ')|title, "Most recent billing state synced into the app.") }}
+    </div>
+    <div class="col-md-4">
+        {{ ui.metric_card("Cancellation state", "Scheduled" if subscription.cancel_at_period_end else "Active", "The subscription will stop at period end." if subscription.cancel_at_period_end else "No end-of-period cancellation is currently scheduled.") }}
+    </div>
+    <div class="col-md-4">
+        {{ ui.metric_card("Current period end", subscription.current_period_end.strftime('%Y-%m-%d') if subscription.current_period_end else 'Not set', "Useful for renewal timing and retention follow-up.") }}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Latest billing issue</h2>
+                <p class="text-muted mb-3">The latest event that may need owner follow-up.</p>
+                {% if latest_issue %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr><th class="table-light">Event</th><td>{{ latest_issue.event_type }}</td></tr>
+                            <tr><th class="table-light">Occurred</th><td>{{ latest_issue.occurred_at.strftime('%Y-%m-%d %H:%M') if latest_issue.occurred_at else 'Recently' }}</td></tr>
+                            <tr><th class="table-light">Status</th><td>{{ latest_issue.status|replace('_', ' ')|title if latest_issue.status else 'Attention' }}</td></tr>
+                            <tr><th class="table-light">Summary</th><td>{{ latest_issue.summary or 'This event needs owner review.' }}</td></tr>
+                            {% if latest_issue.reference_url %}
+                            <tr><th class="table-light">Reference</th><td><a href="{{ latest_issue.reference_url }}">Open invoice reference</a></td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No billing issues right now.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Owner actions</h2>
+                <p class="text-muted mb-3">Common billing actions for support and renewal conversations.</p>
+                <ul class="mb-4">
+                    <li>Open the Stripe portal when the owner needs self-service billing changes.</li>
+                    <li>Review the billing history to understand the full event sequence.</li>
+                    <li>Use cancellation only when the restaurant wants service to stop at period end.</li>
+                </ul>
+                <form action="/billing/{{ restaurant_id }}/cancel" method="post" data-loading-label="Scheduling cancellation...">
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit" {% if subscription.status == 'canceled' or subscription.cancel_at_period_end %}disabled{% endif %}>
+                            {% if subscription.status == 'canceled' or subscription.cancel_at_period_end %}
+                            Cancellation Scheduled
+                            {% else %}
+                            Cancel at Period End
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h4 mb-1">Recent billing events</h2>
+        <p class="text-muted mb-3">Short event trail for quick owner and support review.</p>
+        {% if events %}
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Event</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Occurred</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td>{{ event.event_type }}</td>
+                        <td>{{ event.source|title }}</td>
+                        <td>{{ event.status|replace('_', ' ')|title if event.status else '-' }}</td>
+                        <td>{{ event.occurred_at.strftime('%Y-%m-%d %H:%M') if event.occurred_at else 'Recently' }}</td>
+                        <td>{{ event.summary or 'Billing event recorded.' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No billing history yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

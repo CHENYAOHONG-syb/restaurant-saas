@@ -1,0 +1,144 @@
+{% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
+
+{% block page_title %}Operations Workspace{% endblock %}
+{% block page_description %}Monitor queue health, service metrics, and recent ticket activity from one manager view.{% endblock %}
+{% block page_actions %}
+<a class="btn btn-secondary" href="/admin/orders/{{ restaurant_id }}">Live Orders</a>
+<a class="btn btn-secondary" href="/admin/kitchen/{{ restaurant_id }}">Kitchen Board</a>
+<a class="btn btn-primary" href="/admin/pos/{{ restaurant_id }}">Open POS Workspace</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        {{ ui.metric_card("Active tickets", active_count, "Orders still moving through service.") }}
+    </div>
+    <div class="col-md-3">
+        {{ ui.metric_card("Submitted", submitted_count, "Tickets waiting for acknowledgement.") }}
+    </div>
+    <div class="col-md-3">
+        {{ ui.metric_card("Preparing", preparing_count, "Orders currently in progress.") }}
+    </div>
+    <div class="col-md-3">
+        {{ ui.metric_card("Ready", ready_count, "Orders ready to be served.") }}
+    </div>
+    <div class="col-md-3">
+        {{ ui.metric_card("Served", served_count, "Orders awaiting payment closeout.") }}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Operations snapshot</h2>
+                <p class="text-muted mb-3">Core service and business metrics for the current restaurant workspace.</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <tbody>
+                            <tr><th class="table-light">Open tables</th><td>{{ active_tables }}</td></tr>
+                            <tr><th class="table-light">Menu available</th><td>{{ menu_count }}</td></tr>
+                            <tr><th class="table-light">Sales snapshot</th><td>RM {{ '%.2f'|format(total_sales) }}</td></tr>
+                            <tr><th class="table-light">Tickets at risk</th><td>{{ late_count }}</td></tr>
+                            <tr><th class="table-light">Average active age</th><td>{{ average_ticket_minutes }} min</td></tr>
+                            <tr><th class="table-light">Peak hour</th><td>{{ peak_hour }}</td></tr>
+                            <tr><th class="table-light">Average check</th><td>RM {{ '%.2f'|format(average_order_value) }}</td></tr>
+                            <tr><th class="table-light">Busiest table</th><td>{% if busiest_table %}Table {{ busiest_table }} ({{ busiest_table_count }} tickets){% else %}No table yet{% endif %}</td></tr>
+                            <tr><th class="table-light">Kitchen overdue rate</th><td>{{ '%.1f'|format(late_rate) }}%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Manager alerts</h2>
+                <p class="text-muted mb-3">Signals worth checking before diving into ticket-level detail.</p>
+                <ul class="list-group">
+                    {% for alert in service_alerts %}
+                    <li class="list-group-item">{{ alert }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Top dishes in motion</h2>
+                <p class="text-muted mb-3">Most frequently ordered items across current data.</p>
+                {% if top_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Dish</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, quantity in top_items %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td>{{ quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No dish trends yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Latest service activity</h2>
+                <p class="text-muted mb-3">Recent tickets and their current service state.</p>
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order</th>
+                                <th>Table</th>
+                                <th>Table Status</th>
+                                <th>Status</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in recent_orders %}
+                            <tr>
+                                <td>#{{ row.order.id }}</td>
+                                <td>{{ row.order.table_number }}</td>
+                                <td>{{ ui.status_badge(row.table_status|title, row.table_status) }}</td>
+                                <td>{{ ui.status_badge(row.order.status|title, row.order.status) }}</td>
+                                <td>{{ row.order_items|length }}</td>
+                                <td>RM {{ '%.2f'|format(row.total) }}</td>
+                                <td>{% if row.order.created_at %}{{ row.order.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No orders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

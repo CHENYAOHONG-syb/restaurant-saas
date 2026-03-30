@@ -1,142 +1,118 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
 {% extends "admin_layout.html" %}
+{% import "_components.html" as ui %}
+
+{% block page_title %}Menu Studio{% endblock %}
+{% block page_description %}Publish dishes, adjust pricing, and keep the guest menu clear enough that customers can order without help.{% endblock %}
+{% block page_actions %}
+{% if current_user.role == 'owner' %}
+<a class="btn btn-secondary" href="/dashboard/{{ restaurant_id }}">Back</a>
+{% else %}
+<a class="btn btn-secondary" href="/admin/operations/{{ restaurant_id }}">Back</a>
+{% endif %}
+<a class="btn btn-secondary" href="{{ url_for('admin.category_manager', restaurant_id=restaurant_id) }}">Categories</a>
+<a class="btn btn-secondary" href="{{ url_for('admin.inventory_manager', restaurant_id=restaurant_id) }}">Inventory</a>
+<a class="btn btn-primary" href="/menu/r/{{ restaurant.slug if restaurant else '' }}?table=1">Open Guest Menu</a>
+{% endblock %}
 
 {% block content %}
-<title>Menu Admin</title>
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h4 mb-1">Add menu item</h2>
+                <p class="text-muted mb-4">Create a new dish or drink for the live guest menu.</p>
+                <form action="/admin/menu/{{ restaurant_id }}/add" method="post" data-loading-label="Publishing item...">
+                    {{ ui.hidden_fields(menu_state.return_fields) }}
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-name">Dish name</label>
+                        <input class="form-control" id="dish-name" type="text" name="name" placeholder="Signature Nasi Lemak" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-price">Price (RM)</label>
+                        <input class="form-control" id="dish-price" type="number" step="0.01" min="0" name="price" placeholder="18.90" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-category">Category</label>
+                        <select class="form-select" id="dish-category" name="category">
+                            {% for category_name in category_names %}
+                            <option value="{{ category_name }}">{{ category_name.title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-description">Description</label>
+                        <textarea class="form-control" id="dish-description" name="description" rows="4" placeholder="Tell customers what makes this item special."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-inventory-item">Primary inventory item</label>
+                        <select class="form-select" id="dish-inventory-item" name="inventory_item_id">
+                            <option value="">No inventory link yet</option>
+                            {% for inventory_item in inventory_items %}
+                            <option value="{{ inventory_item.id }}">{{ inventory_item.name }} · {{ inventory_item.stock }} {{ inventory_item.unit }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">This is the lightweight stock hook for demo flows. Full recipe mapping can build on top of this later.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="dish-inventory-quantity">Quantity used per order</label>
+                        <input class="form-control" id="dish-inventory-quantity" type="number" step="0.01" min="0" name="inventory_quantity" placeholder="1">
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit">Publish Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<style>
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Live menu items</h2>
+                        <p class="text-muted mb-0">Everything listed here is already part of the guest ordering flow.</p>
+                    </div>
+                    <span class="badge text-bg-secondary">{{ menu_state.pagination.total }} item{% if menu_state.pagination.total != 1 %}s{% endif %}</span>
+                </div>
 
-body{
-font-family:Arial;
-background:#f4f4f4;
-padding:20px;
-}
-
-h1{
-text-align:center;
-}
-
-.food{
-background:white;
-padding:10px;
-margin:10px;
-border-radius:8px;
-display:flex;
-align-items:center;
-}
-
-.food{
-display:flex;
-justify-content:space-between;
-}
-
-.food img{
-width:60px;
-height:60px;
-border-radius:6px;
-margin-right:10px;
-}
-
-.food-name{
-flex:1;
-}
-
-button{
-background:#e74c3c;
-color:white;
-border:none;
-padding:6px 10px;
-border-radius:5px;
-cursor:pointer;
-}
-
-button:hover{
-background:#c0392b;
-}
-
-.add-form{
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:10px;
-}
-
-input,select{
-padding:8px;
-margin:5px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>Menu Manager</h1>
-
-<div class="add-form">
-
-<form action="/add_food" method="POST" enctype="multipart/form-data">
-
-<input type="text" name="name" placeholder="Food name" required>
-
-<input type="number" name="price" placeholder="Price" required>
-
-<select name="category">
-<option value="main">Main</option>
-<option value="drink">Drink</option>
-<option value="dessert">Dessert</option>
-</select>
-
-<input type="file" name="image" required>
-
-<input type="hidden" name="restaurant_id" value="{{restaurant_id}}">
-
-<button type="submit">Add Food</button>
-
-</form>
-
+                {{ ui.list_toolbar(menu_state) }}
+                {% if foods %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle mb-0" id="menuTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Description</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for food in foods %}
+                            <tr>
+                                <td>{{ food.name }}</td>
+                                <td>{{ food.category or 'menu item' }}</td>
+                                <td>RM {{ '%.2f'|format(food.price) }}</td>
+                                <td>{{ food.description or 'No description yet.' }}</td>
+                                <td class="text-center">
+                                    <form action="/admin/menu/{{ restaurant_id }}/delete/{{ food.id }}" method="post" class="d-inline" data-loading-label="Removing...">
+                                        {{ ui.hidden_fields(menu_state.return_fields) }}
+                                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {{ ui.pagination_nav(menu_state.pagination) }}
+                {% else %}
+                {{ ui.empty_state("No items found", "Try a different search or filter, or publish the first menu item.") }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
-
-{% for food in foods %}
-
-<div class="food">
-
-<img src="{{ url_for('static', filename=food.image.replace('static/','')) }}">
-
-<div class="food-name">
-
-{{food.name}} - RM {{food.price}}
-
-</div>
-
-<form action="/delete_food/{{food.id}}" method="POST">
-<a href="/edit_food/{{food.id}}">
-
-<button type="button" style="background:#3498db">Edit</button>
-
-</a>
-
-<form action="/delete_food/{{food.id}}" method="POST">
-
-<button>Delete</button>
-
-</form>
-
-<button>Delete</button>
-
-</form>
-
-</div>
-
-{% endfor %}
 {% endblock %}
-</body>
-
-</html>

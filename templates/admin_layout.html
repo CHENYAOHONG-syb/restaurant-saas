@@ -1,85 +1,580 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name if restaurant else 'Restaurant Admin' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --admin-bg: #f8fafc;
+            --admin-surface: #ffffff;
+            --admin-surface-muted: #f8fafc;
+            --admin-border: #e2e8f0;
+            --admin-border-strong: #cbd5e1;
+            --admin-copy: #0f172a;
+            --admin-copy-muted: #64748b;
+            --admin-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+            --admin-shadow-md: 0 14px 34px rgba(15, 23, 42, 0.07);
+            --admin-radius-lg: 1.125rem;
+            --admin-radius-md: 0.875rem;
+            --admin-primary: #0f172a;
+            --admin-primary-soft: #eff6ff;
+        }
 
-<title>Admin Dashboard</title>
+        body {
+            background:
+                radial-gradient(circle at top, rgba(148, 163, 184, 0.08), transparent 28%),
+                var(--admin-bg);
+            color: var(--admin-copy);
+            -webkit-font-smoothing: antialiased;
+        }
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+        .navbar {
+            background: rgba(15, 23, 42, 0.96) !important;
+            backdrop-filter: blur(14px);
+            box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.15);
+        }
 
-<style>
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
 
-body{
-margin:0;
-font-family:Arial;
-display:flex;
-}
+        .navbar-brand small {
+            display: block;
+            font-size: 0.75rem;
+            color: rgba(226, 232, 240, 0.72);
+        }
 
-.sidebar{
-width:220px;
-background:#2c3e50;
-height:100vh;
-color:white;
-padding:20px;
-}
+        .page-header {
+            margin-bottom: 1.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 1.25rem;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+            box-shadow: var(--admin-shadow-sm);
+        }
 
-.sidebar h2{
-text-align:center;
-}
+        .page-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
 
-.sidebar a{
-display:block;
-color:white;
-text-decoration:none;
-padding:10px;
-margin:5px 0;
-border-radius:5px;
-}
+        .metric-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
 
-.sidebar a:hover{
-background:#34495e;
-}
+        .card {
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius-lg);
+            background: var(--admin-surface);
+            box-shadow: var(--admin-shadow-sm);
+        }
 
-.content{
-flex:1;
-padding:30px;
-background:#f4f4f4;
-}
+        .card.shadow-sm,
+        .shadow-sm {
+            box-shadow: var(--admin-shadow-sm) !important;
+        }
 
-</style>
+        .card-body {
+            padding: 1.35rem;
+        }
 
+        .table-responsive {
+            border: 1px solid var(--admin-border);
+            border-radius: var(--admin-radius-md);
+            background: var(--admin-surface);
+        }
+
+        .metric-surface,
+        .empty-state-card {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(248, 250, 252, 0.96));
+        }
+
+        .metric-link-card {
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+        }
+
+        .metric-link-card:hover {
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+            box-shadow: var(--admin-shadow-md) !important;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-striped-bg: #f8fafc;
+            --bs-table-striped-color: var(--admin-copy);
+            --bs-table-border-color: var(--admin-border);
+            margin-bottom: 0;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 0.95rem 1rem;
+            vertical-align: middle;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        h2, .h4, .h5 {
+            letter-spacing: -0.02em;
+        }
+
+        .text-muted {
+            color: var(--admin-copy-muted) !important;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 2.9rem;
+            border-color: var(--admin-border);
+            border-radius: 0.9rem;
+            background: #fff;
+            box-shadow: none;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #94a3b8;
+            box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.14);
+        }
+
+        .btn {
+            border-radius: 0.85rem;
+            font-weight: 600;
+            padding: 0.7rem 1rem;
+            box-shadow: none;
+        }
+
+        .btn-sm {
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.8rem;
+        }
+
+        .btn-primary {
+            background: var(--admin-primary);
+            border-color: var(--admin-primary);
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background: #1e293b;
+            border-color: #1e293b;
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            border-color: var(--admin-border-strong);
+            color: var(--admin-copy);
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: var(--admin-copy);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .btn-outline-light {
+            border-color: rgba(226, 232, 240, 0.28);
+        }
+
+        .alert {
+            border: 1px solid var(--admin-border);
+            border-radius: 1rem;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 0.34rem 0.72rem;
+            border: 1px solid rgba(203, 213, 225, 0.9);
+            border-radius: 999px;
+            background-color: #f8fafc;
+            font-size: 0.79rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            color: #475569;
+        }
+
+        .status-pill.secondary {
+            color: #64748b;
+            background: #f8fafc;
+        }
+
+        .status-pill.submitted,
+        .status-pill.pending,
+        .status-pill.not_applied {
+            color: #b45309;
+            background: #fff7ed;
+            border-color: #fdba74;
+        }
+
+        .status-pill.preparing,
+        .status-pill.needs_cleaning {
+            color: #1d4ed8;
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+        .status-pill.ready,
+        .status-pill.available,
+        .status-pill.paid,
+        .status-pill.active,
+        .status-pill.accepted,
+        .status-pill.served {
+            color: #166534;
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .status-pill.occupied {
+            color: #9a3412;
+            background: #fff7ed;
+            border-color: #fdba74;
+        }
+
+        .status-pill.reserved,
+        .status-pill.trialing {
+            color: #6d28d9;
+            background: #f5f3ff;
+            border-color: #c4b5fd;
+        }
+
+        .status-pill.served,
+        .status-pill.paid,
+        .status-pill.active,
+        .status-pill.cancelled,
+        .status-pill.revoked,
+        .status-pill.expired,
+        .status-pill.restored,
+        .status-pill.unmapped {
+            color: #64748b;
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .status-pill.canceled,
+        .status-pill.past_due {
+            color: #b91c1c;
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .nav-link {
+            font-weight: 500;
+        }
+
+        .nav-link.active {
+            color: #fff !important;
+        }
+
+        .pagination .page-link {
+            border-color: var(--admin-border);
+            color: var(--admin-copy);
+            border-radius: 0.75rem !important;
+            margin: 0 0.15rem;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: var(--admin-primary);
+            border-color: var(--admin-primary);
+        }
+
+        @media (max-width: 991.98px) {
+            .page-actions {
+                justify-content: flex-start;
+            }
+
+            .page-header {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
 </head>
-
 <body>
+    {% set navbar_restaurant = restaurant if restaurant is defined else None %}
+    {% set navbar_restaurant_id = restaurant_id if restaurant_id is defined and restaurant_id else (navbar_restaurant.id if navbar_restaurant else None) %}
+    {% set navbar_slug = navbar_restaurant.slug if navbar_restaurant and navbar_restaurant.slug is defined else None %}
 
-<div class="sidebar">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand" href="{% if navbar_restaurant_id and current_user.is_authenticated %}{% if current_user.role == 'owner' %}{{ url_for('admin.dashboard', restaurant_id=navbar_restaurant_id) }}{% elif current_user.role == 'manager' %}{{ url_for('admin.operations_workspace', restaurant_id=navbar_restaurant_id) }}{% elif current_user.role == 'cashier' %}{{ url_for('admin.pos_workspace', restaurant_id=navbar_restaurant_id) }}{% else %}{{ url_for('admin.kitchen_workspace', restaurant_id=navbar_restaurant_id) }}{% endif %}{% else %}#{% endif %}">
+                {{ navbar_restaurant.name if navbar_restaurant else 'Restaurant OS' }}
+                <small>{{ navbar_restaurant.address if navbar_restaurant and navbar_restaurant.address else 'Restaurant admin console' }}</small>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% if navbar_restaurant_id %}
+                        {% if current_user.role == 'owner' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('admin.dashboard', restaurant_id=navbar_restaurant_id) %}active{% endif %}" href="{{ url_for('admin.dashboard', restaurant_id=navbar_restaurant_id) }}">Overview</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('admin.operations_workspace', restaurant_id=navbar_restaurant_id) %}active{% endif %}" href="{{ url_for('admin.operations_workspace', restaurant_id=navbar_restaurant_id) }}">Operations</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager', 'cashier'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('admin.pos_workspace', restaurant_id=navbar_restaurant_id) %}active{% endif %}" href="{{ url_for('admin.pos_workspace', restaurant_id=navbar_restaurant_id) }}">POS</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/menu/') %}active{% endif %}" href="{{ url_for('admin.menu_manager', restaurant_id=navbar_restaurant_id) }}">Menu</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/categories/') %}active{% endif %}" href="{{ url_for('admin.category_manager', restaurant_id=navbar_restaurant_id) }}">Categories</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/inventory/') %}active{% endif %}" href="{{ url_for('admin.inventory_manager', restaurant_id=navbar_restaurant_id) }}">Inventory</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager', 'cashier', 'staff'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/tables/') %}active{% endif %}" href="{{ url_for('admin.table_manager', restaurant_id=navbar_restaurant_id) }}">Tables</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager', 'staff', 'kitchen'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == url_for('admin.kitchen_workspace', restaurant_id=navbar_restaurant_id) %}active{% endif %}" href="{{ url_for('admin.kitchen_workspace', restaurant_id=navbar_restaurant_id) }}">Kitchen</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role in ['owner', 'manager', 'staff', 'cashier', 'kitchen'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/orders/') %}active{% endif %}" href="{{ url_for('admin.order_manager', restaurant_id=navbar_restaurant_id) }}">Orders</a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role == 'owner' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/admin/team/') %}active{% endif %}" href="{{ url_for('admin.team_manager', restaurant_id=navbar_restaurant_id) }}">Team</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path.startswith('/billing/') %}active{% endif %}" href="{{ url_for('admin.billing', restaurant_id=navbar_restaurant_id) }}">Billing</a>
+                        </li>
+                        {% endif %}
+                        {% if navbar_slug %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('menu.restaurant_menu', slug=navbar_slug, table=1) }}">Guest View</a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <form action="{{ url_for('auth.logout') }}" method="post" class="d-flex">
+                    <button class="btn btn-outline-light" type="submit">Log Out</button>
+                </form>
+            </div>
+        </div>
+    </nav>
 
-<h2>Restaurant</h2>
+    <main class="container py-4">
+        <div class="page-header">
+            <div class="row g-3 align-items-start">
+                <div class="col-lg">
+                    <h2 class="mb-1">{% block page_title %}Admin{% endblock %}</h2>
+                    <p class="text-muted mb-2">{% block page_description %}Keep menu publishing, order handling, and billing decisions inside one clear workspace.{% endblock %}</p>
+                    <div class="small text-muted">
+                        {% if navbar_restaurant_id %}Restaurant ID {{ navbar_restaurant_id }}{% endif %}
+                        {% if navbar_slug %} · /{{ navbar_slug }}{% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-auto">
+                    <div class="page-actions">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<a href="/dashboard/{{restaurant_id}}">Dashboard</a>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                {% set alert_class = 'info' %}
+                {% if category == 'success' %}
+                {% set alert_class = 'success' %}
+                {% elif category == 'error' %}
+                {% set alert_class = 'danger' %}
+                {% elif category == 'warning' %}
+                {% set alert_class = 'warning' %}
+                {% endif %}
+                <div class="alert alert-{{ alert_class }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
 
-<a href="/admin/menu/{{restaurant_id}}">Menu</a>
+        {% block content %}{% endblock %}
+    </main>
 
-<a href="/admin/categories/{{restaurant_id}}">Categories</a>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (() => {
+            document.querySelectorAll("form").forEach((form) => {
+                const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                if (!submitButton || submitButton.disabled) {
+                    return;
+                }
 
-<a href="/admin/inventory/{{restaurant_id}}">Inventory</a>
+                form.addEventListener("submit", () => {
+                    if (typeof form.reportValidity === "function" && !form.reportValidity()) {
+                        return;
+                    }
 
-<a href="/admin/orders/{{restaurant_id}}">Orders</a>
+                    const loadingLabel = form.dataset.loadingLabel || submitButton.dataset.loadingLabel || "Working...";
+                    if (submitButton.tagName === "INPUT") {
+                        submitButton.value = loadingLabel;
+                    } else {
+                        submitButton.textContent = loadingLabel;
+                    }
+                    submitButton.disabled = true;
+                    submitButton.setAttribute("aria-busy", "true");
+                });
+            });
 
-<a href="/admin/settings/{{restaurant_id}}">Settings</a>
+            document.querySelectorAll("[data-filter-group]").forEach((group) => {
+                const target = document.querySelector(group.dataset.target || "");
+                if (!target) {
+                    return;
+                }
 
-<a href="/billing/{{restaurant_id}}">Billing</a>
+                const rows = Array.from(target.querySelectorAll("tbody tr"));
+                const searchInput = group.querySelector("[data-table-search]");
+                const filters = Array.from(group.querySelectorAll("[data-table-filter]"));
+                const emptyState = group.querySelector("[data-filter-empty]");
+                const tableWrapper = target.closest(".table-responsive");
+                const prevButton = group.querySelector("[data-pagination-prev]");
+                const nextButton = group.querySelector("[data-pagination-next]");
+                const paginationStatus = group.querySelector("[data-pagination-status]");
+                const pageSize = Number(group.dataset.pageSize || 10);
+                let currentPage = 1;
 
-</div>
+                const normalize = (value) => (value || "").toString().trim().toLowerCase();
 
-<div class="content">
+                const applyFilters = ({ resetPage = false } = {}) => {
+                    if (resetPage) {
+                        currentPage = 1;
+                    }
 
-{% block content %}
+                    const query = normalize(searchInput ? searchInput.value : "");
+                    const matchedRows = [];
 
-{% endblock %}
+                    rows.forEach((row) => {
+                        const haystack = normalize(row.dataset.search || row.textContent);
+                        const matchesSearch = !query || haystack.includes(query);
+                        const matchesFilters = filters.every((filter) => {
+                            const filterValue = normalize(filter.value);
+                            if (!filterValue) {
+                                return true;
+                            }
+                            const key = filter.dataset.filterKey;
+                            return normalize(row.dataset[key]) === filterValue;
+                        });
 
-</div>
+                        if (matchesSearch && matchesFilters) {
+                            matchedRows.push(row);
+                        }
+                    });
 
+                    const visibleCount = matchedRows.length;
+                    const totalPages = visibleCount ? Math.ceil(visibleCount / pageSize) : 1;
+                    if (currentPage > totalPages) {
+                        currentPage = totalPages;
+                    }
+                    const startIndex = (currentPage - 1) * pageSize;
+                    const endIndex = startIndex + pageSize;
+
+                    rows.forEach((row) => {
+                        row.classList.add("d-none");
+                    });
+
+                    matchedRows.forEach((row, index) => {
+                        const visible = index >= startIndex && index < endIndex;
+                        row.classList.toggle("d-none", !visible);
+                    });
+
+                    if (emptyState) {
+                        emptyState.classList.toggle("d-none", visibleCount !== 0);
+                    }
+
+                    if (tableWrapper) {
+                        tableWrapper.classList.toggle("d-none", visibleCount === 0);
+                    }
+
+                    if (paginationStatus) {
+                        if (visibleCount === 0) {
+                            paginationStatus.textContent = "No matching rows";
+                        } else {
+                            paginationStatus.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, visibleCount)} of ${visibleCount}`;
+                        }
+                    }
+
+                    if (prevButton) {
+                        prevButton.disabled = visibleCount === 0 || currentPage <= 1;
+                    }
+
+                    if (nextButton) {
+                        nextButton.disabled = visibleCount === 0 || currentPage >= totalPages;
+                    }
+                };
+
+                if (searchInput) {
+                    searchInput.addEventListener("input", () => applyFilters({ resetPage: true }));
+                }
+
+                filters.forEach((filter) => {
+                    filter.addEventListener("change", () => applyFilters({ resetPage: true }));
+                });
+
+                if (prevButton) {
+                    prevButton.addEventListener("click", () => {
+                        currentPage = Math.max(1, currentPage - 1);
+                        applyFilters();
+                    });
+                }
+
+                if (nextButton) {
+                    nextButton.addEventListener("click", () => {
+                        currentPage += 1;
+                        applyFilters();
+                    });
+                }
+
+                applyFilters({ resetPage: true });
+            });
+        })();
+    </script>
+    {% block extra_scripts %}{% endblock %}
 </body>
-
 </html>

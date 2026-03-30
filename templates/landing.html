@@ -1,175 +1,233 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "public_layout.html" %}
 
-<title>QR Ordering System</title>
+{% block title %}Restaurant OS{% endblock %}
 
+{% block extra_styles %}
 <style>
+    .landing-grid {
+        display: grid;
+        gap: 1.25rem;
+    }
 
-body{
-    font-family: Arial;
-    margin:0;
-    background:#f5f5f5;
-}
+    .landing-hero-grid,
+    .landing-story-grid,
+    .landing-path-grid,
+    .landing-pricing-grid {
+        display: grid;
+        gap: 1rem;
+    }
 
-/* navbar */
+    .landing-hero-grid {
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.95fr);
+    }
 
-.navbar{
-    display:flex;
-    justify-content:space-between;
-    padding:20px;
-    background:white;
-}
+    .landing-story-grid,
+    .landing-path-grid,
+    .landing-pricing-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
 
-.navbar a{
-    margin-left:15px;
-    text-decoration:none;
-    color:#333;
-}
+    .landing-callout {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.5rem;
+        background: rgba(255, 253, 249, 0.96);
+        box-shadow: var(--guest-shadow);
+    }
 
-/* hero */
+    .landing-callout .card-body {
+        display: grid;
+        gap: 1rem;
+        padding: 1.35rem;
+    }
 
-.hero{
-    padding:80px;
-    background:#2c3e50;
-    color:white;
-    text-align:center;
-}
+    .landing-path-card,
+    .landing-price-card {
+        border: 1px solid rgba(234, 223, 210, 0.95);
+        border-radius: 1.5rem;
+        background: rgba(255, 253, 249, 0.96);
+        box-shadow: var(--guest-shadow);
+        height: 100%;
+    }
 
-.btn{
-    display:inline-block;
-    padding:15px 25px;
-    background:#27ae60;
-    color:white;
-    text-decoration:none;
-    border-radius:5px;
-    margin-top:20px;
-}
+    .landing-path-card .card-body,
+    .landing-price-card .card-body {
+        display: grid;
+        gap: 1rem;
+        padding: 1.35rem;
+    }
 
-/* features */
+    .landing-price-card.featured {
+        border-color: rgba(209, 111, 63, 0.45);
+        background: linear-gradient(180deg, rgba(255, 244, 232, 0.96), rgba(255, 253, 249, 0.98));
+    }
 
-.features{
-    padding:50px;
-    text-align:center;
-}
+    .landing-price {
+        font-size: 1.9rem;
+        font-weight: 800;
+        line-height: 1;
+    }
 
-.feature{
-    margin:20px;
-}
+    .landing-price span {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--guest-muted);
+    }
 
-/* pricing */
-
-.pricing{
-    background:#eee;
-    padding:50px;
-    text-align:center;
-}
-
-.plan{
-    margin:20px;
-}
-
+    @media (max-width: 991.98px) {
+        .landing-hero-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
+{% endblock %}
 
-</head>
+{% block top_actions %}
+<a class="btn btn-secondary" href="#pricing">Pricing</a>
+<a class="btn btn-secondary" href="/menu/r/demo-restaurant?table=1">Try Guest Demo</a>
+<a class="btn btn-primary" href="/restaurants/new">Launch Restaurant</a>
+{% endblock %}
 
-<body>
+{% block body %}
+<div class="landing-grid">
+    <section class="landing-hero-grid">
+        <article class="guest-hero card border-0">
+            <div class="card-body">
+                <span class="guest-kicker">Guest ordering + service flow</span>
+                <h1 class="guest-heading">A restaurant ordering experience guests can use in seconds</h1>
+                <p class="guest-subheading">
+                    Open a table menu, add dishes, review the order, and move it into service without turning the guest journey into a back-office workflow.
+                </p>
+                <div class="guest-chip-row mt-4">
+                    <span class="guest-chip"><strong>Scan and order</strong> on the phone</span>
+                    <span class="guest-chip"><strong>Kitchen ready</strong> flow built in</span>
+                    <span class="guest-chip"><strong>Billing path</strong> included</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-primary btn-lg" href="/menu/r/demo-restaurant?table=1">Open the Guest Demo</a>
+                    <a class="btn btn-secondary btn-lg" href="/restaurants/new">Launch Your Restaurant</a>
+                </div>
+            </div>
+        </article>
 
-<!-- NAVBAR -->
+        <aside class="landing-callout card border-0">
+            <div class="card-body">
+                <div>
+                    <span class="guest-form-kicker">What this demo shows</span>
+                    <h2 class="guest-section-title">From first scan to live service</h2>
+                    <p class="guest-section-copy">Use this as a guided product walk-through for guests, owners, kitchen staff, and billing.</p>
+                </div>
+                <div class="guest-chip-row">
+                    <span class="guest-chip"><strong>1</strong> launch restaurant</span>
+                    <span class="guest-chip"><strong>2</strong> publish menu</span>
+                    <span class="guest-chip"><strong>3</strong> take guest orders</span>
+                    <span class="guest-chip"><strong>4</strong> run service and billing</span>
+                </div>
+                <a class="btn btn-secondary" href="/auth/login">Open Owner Console</a>
+            </div>
+        </aside>
+    </section>
 
-<div class="navbar">
+    <section class="landing-story-grid">
+        <article class="guest-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">For guests</span>
+                <h2 class="guest-section-title">Less friction at the table</h2>
+                <p class="guest-section-copy">Menus are easier to scan, prices are clearer, and the path from dish selection to checkout stays obvious on mobile.</p>
+            </div>
+        </article>
+        <article class="guest-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">For service teams</span>
+                <h2 class="guest-section-title">Orders move with the room</h2>
+                <p class="guest-section-copy">Guest ordering, kitchen handoff, table handling, and receipts all stay connected inside one workflow.</p>
+            </div>
+        </article>
+        <article class="guest-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">For owners</span>
+                <h2 class="guest-section-title">A demo that feels like a real product</h2>
+                <p class="guest-section-copy">You can show setup, live operations, billing, and menu publishing without stitching together multiple tools.</p>
+            </div>
+        </article>
+    </section>
 
-<div>
-<b>QR Restaurant</b>
+    <section class="landing-path-grid">
+        <article class="landing-path-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">Path 1</span>
+                <h2 class="guest-section-title">Try the guest journey first</h2>
+                <p class="guest-section-copy">Open the demo menu, add dishes, review the cart, and see how natural the phone ordering flow feels.</p>
+                <a class="btn btn-primary" href="/menu/r/demo-restaurant?table=1">Start Guest Demo</a>
+            </div>
+        </article>
+        <article class="landing-path-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">Path 2</span>
+                <h2 class="guest-section-title">Launch the restaurant workspace</h2>
+                <p class="guest-section-copy">Create the restaurant, register the owner account, and publish the menu you want to show.</p>
+                <a class="btn btn-secondary" href="/restaurants/new">Create Restaurant</a>
+            </div>
+        </article>
+        <article class="landing-path-card card border-0">
+            <div class="card-body">
+                <span class="guest-form-kicker">Path 3</span>
+                <h2 class="guest-section-title">Open owner tools and billing</h2>
+                <p class="guest-section-copy">Step into menu management, operations, and plan changes without leaving the product story.</p>
+                <a class="btn btn-secondary" href="/auth/login">Owner Sign In</a>
+            </div>
+        </article>
+    </section>
+
+    <section class="guest-card card border-0" id="pricing">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                <div>
+                    <span class="guest-form-kicker">Pricing</span>
+                    <h2 class="guest-section-title mb-1">Move from pilot to paid operations</h2>
+                    <p class="guest-section-copy">Start with a simple launch, then grow into paid service and billing without changing the workflow.</p>
+                </div>
+                <a class="btn btn-secondary" href="/auth/login">Review Upgrade Paths</a>
+            </div>
+
+            <div class="landing-pricing-grid">
+                {% for key, plan in plans.items() %}
+                <article class="landing-price-card card border-0 {% if plan.featured %}featured{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <h3 class="guest-section-title mb-1">{{ plan.name }}</h3>
+                                <p class="guest-section-copy">{{ plan.tagline }}</p>
+                            </div>
+                            {% if plan.featured %}
+                            <span class="guest-chip"><strong>Popular</strong></span>
+                            {% endif %}
+                        </div>
+                        <div class="landing-price">
+                            {% if plan.price %}
+                            RM {{ plan.price }}
+                            {% else %}
+                            Free
+                            {% endif %}
+                            <span>/ {{ plan.interval }}</span>
+                        </div>
+                        <p class="guest-section-copy">{{ plan.description }}</p>
+                        <ul class="mb-0 ps-3">
+                            {% for highlight in plan.highlights %}
+                            <li>{{ highlight }}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="mt-auto">
+                            {% if key == 'starter' %}
+                            <a class="btn btn-secondary w-100" href="/restaurants/new">Launch the Pilot</a>
+                            {% else %}
+                            <a class="btn btn-primary w-100" href="/auth/login">See Billing Flow</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 </div>
-
-<div>
-<a href="/auth/login">Login</a>
-<a href="/auth/register">Start Free Trial</a>
-</div>
-
-</div>
-
-
-<!-- HERO -->
-
-<div class="hero">
-
-<h1>QR Ordering System for Restaurants</h1>
-
-<p>Customers scan, order, and pay from their phone.</p>
-
-<a class="btn" href="/auth/register">
-Start Free Trial
-</a>
-
-<br><br>
-
-<a class="btn" href="/orders/kitchen/1">
-Kitchen Demo
-</a>
-
-<a class="btn" href="/r/demo-restaurant?table=1">
-Customer Demo
-</a>
-
-</div>
-
-
-<!-- FEATURES -->
-
-<div class="features">
-
-<h2>Features</h2>
-
-<div class="feature">
-<h3>QR Menu</h3>
-<p>Customers scan QR and order.</p>
-</div>
-
-<div class="feature">
-<h3>Kitchen Screen</h3>
-<p>Orders appear instantly in kitchen.</p>
-</div>
-
-<div class="feature">
-<h3>Dashboard</h3>
-<p>See sales and analytics.</p>
-</div>
-
-<div class="feature">
-<h3>Inventory</h3>
-<p>Track ingredients automatically.</p>
-</div>
-
-</div>
-
-
-<!-- PRICING -->
-
-<div class="pricing">
-
-<h2>Pricing</h2>
-
-<div class="plan">
-<h3>Free</h3>
-<p>RM0</p>
-<p>Basic menu</p>
-</div>
-
-<div class="plan">
-<h3>Pro</h3>
-<p>RM29/month</p>
-<p>Full features</p>
-</div>
-
-<div class="plan">
-<h3>Business</h3>
-<p>RM59/month</p>
-<p>Analytics + inventory</p>
-</div>
-
-</div>
-
-</body>
-</html>
+{% endblock %}
